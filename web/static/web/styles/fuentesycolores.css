@@ -1,0 +1,74 @@
+/*------Selector universal-------*/
+
+* {
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: 0;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap");
+
+/*Importamos fuentes*/
+:root {
+  --color-barra-lateral: rgb(255, 255, 255);
+  --color-texto: rgb(0, 0, 0);
+  --color-texto-menu: rgb(51, 51, 51);
+  --color-texto-comentarios: rgb(201, 61, 171);
+  --color-boton: rgb(78, 203, 238);
+  --color-boton-texto: rgb(255, 255, 255);
+  --color-menu-hover: rgb(219, 218, 218);
+  --color-boton-hover: rgb(3 167 213);
+  --color-menu-hover-texto: rgb(0, 0, 0);
+  --color-linea: rgb(173, 173, 173);
+  --color-switch-base: rgb(201, 202, 206);
+  --color-switch-circulo: rgb(241, 241, 241);
+  --color-scroll: rgb(0, 0, 0);
+  --color-scroll-hover: rgb(134, 136, 144);
+  --color-boton-login: rgb(119, 119, 119);
+
+  --color-badge-alta1: rgb(45, 133, 238);
+  --color-badge-presupuestada: #ff61bf;
+  --color-badge-aceptada: rgb(113, 206, 152);
+  --color-badge-alta: rgb(63, 143, 252);
+  --color-badge-rechazada: rgb(255, 131, 131);
+  --color-badge-reparada: rgb(253, 153, 1);
+  --color-badge-reparada: rgb(179, 127, 248);
+  --color-badge-entregada: rgb(164, 176, 189);
+
+  --color-badge-alta1-opacity30: rgba(45, 133, 238, 0.3);
+  --color-badge-alta1-opacity70: rgba(45, 133, 238, 0.6);
+
+  --color-badge-presupuestada-opacity50: rgba(255, 97, 191, 0.5);
+
+  --color-badge-aceptada-opacity50: rgba(113, 206, 152, 0.5);
+
+  --color-badge-alta-opacity30: rgba(63, 143, 252, 0.3);
+
+  --color-badge-rechazada-opacity50: rgba(255, 131, 131, 0.6);
+
+  --color-badge-reparada-opacity50: rgba(179, 127, 248, 0.5);
+
+  --color-badge-entregada-opacity30: rgba(164, 176, 189, 0.3);
+}
+
+
+
+.modo-oscuro-activado {
+  --color-barra-lateral: rgb(44, 45, 49);
+  --color-texto: rgb(255, 255, 255);
+  --color-texto-menu: rgb(194, 194, 194);
+  --color-boton: rgb(3 167 213);
+  --color-boton-texto: rgb(238, 238, 238);
+  --color-boton-hover: rgb(224, 74, 192);
+  --color-menu-hover: rgb(61, 61, 61);
+  --color-menu-hover-texto: rgb(255, 255, 255);
+  --color-linea: rgb(85, 84, 94);
+  /* --color-switch-base: rgb(39, 205, 64); */
+  --color-switch-base: rgb(134, 136, 144);
+  --color-switch-circulo: rgb(255, 255, 255);
+  --color-scroll: rgb(255, 255, 255);
+  --color-scroll-hover: rgb(134, 136, 144);
+  --color-boton-login: rgb(151, 151, 151);
+}

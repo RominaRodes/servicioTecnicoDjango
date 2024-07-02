@@ -1,0 +1,52 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block titulo %}
+Listado de Clientes
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/lista_clientes.css' %}" />
+{% endblock %}
+
+{% block main %}
+<div class="container">
+  <h1>Lista de Clientes</h1>
+  <a href="{% url 'crear_cliente' %}" class="btn btn-primary">Nuevo Cliente</a>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+         <th>Razon Social</th>
+        <th>Nombre</th>
+        <th>Condicion Iva</th>
+        <th>Teléfono</th>
+        <th>Email</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cliente in clientes %}
+      <tr>
+        <td><a href="{% url 'detalle_cliente' cliente.id %}">{{ cliente.id }}</a></td>
+        <td>{% if cliente.empresa %}{{ cliente.razon_social }}{% else %}---{% endif %}</td>
+        <td>{{ cliente.nombre }} {{ cliente.apellido }}</td>
+        <td>{{ cliente.condicion_iva }}</td>
+        <td>{{ cliente.telefono }}</td>
+        <td><a href="mailto:{{ cliente.email }}">{{ cliente.email }}</a></td>
+        <td>    
+          <a href="{% url 'editar_cliente' cliente.id %}" class="btn btn-editar">Editar</a>
+          <form action="{% url 'eliminar_cliente' cliente.id %}" method="post" style="display: inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-eliminar">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+{% block extra_js %}
+
+{% endblock %}

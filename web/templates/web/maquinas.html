@@ -1,0 +1,56 @@
+{% extends "web/base.html" %} {% load static %} {% block titulo %}
+Maquinas{%endblock %} {% block main %}
+<h1>Categorias de Maquinas</h1>
+<div class="container d-flex">
+  <a href="/destructoras">
+    <div class="card" style="width: 18rem">
+      <img
+        src="/static/web/img/cd218Pdestructora.png"
+        class="card-img-top"
+        alt="destructora de documentos"
+      />
+      <div class="card-body">
+        <p class="card-text">Destructora de Documento</p>
+      </div>
+    </div>
+  </a>
+
+  <a href="web/maquinas/destructoras">
+    <div class="card" style="width: 18rem">
+      <img
+        src="/static/web/img/dp8120-contadorafrente.jpg"
+        class="card-img-top"
+        alt="destructora de documentos"
+      />
+      <div class="card-body">
+        <p class="card-text">Contadoras de Billetes</p>
+      </div>
+    </div>
+  </a>
+  <a href="web/maquinas/destructoras">
+    <div class="card" style="width: 18rem">
+      <img
+        src="/static/web/img/PR255T-A-768x768.gif"
+        class="card-img-top"
+        alt="destructora de documentos"
+      />
+      <div class="card-body">
+        <p class="card-text">Calculadoras</p>
+      </div>
+    </div>
+  </a>
+  <a href="/destructoras">
+    <div class="card" style="width: 18rem">
+      <img
+        src="/static/web/img/Cables-USB-Cifra-CML419.jpg"
+        class="card-img-top"
+        alt="destructora de documentos"
+      />
+      <div class="card-body">
+        <p class="card-text">Accesorios</p>
+      </div>
+    </div>
+  </a>
+</div>
+
+{% endblock %}

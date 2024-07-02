@@ -1,0 +1,228 @@
+   {% extends "web/base.html" %}
+        {% load static %}
+
+        {% block titulo %}Servicio Tecnico Cifra{% endblock %}  
+{% block extra_css %} 
+ <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'web/styles/dashboard.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'web/styles/index_styles.css' %}"
+    />
+
+    
+{% endblock %}
+{% block main %} 
+ <div class="main p-0"> 
+      <section class="row">
+
+         <div class="row data-row">
+          <div class="col-12 col-md-5 cards">
+            <div class="tarjeta">
+              <div class="card-content">
+                <div class="card-number">{{total_ordenes}}</div>
+                <div class="card-title">Ordenes</div>
+              </div>
+              <div class="icono">
+                <i class="fa-solid fa-list"></i>
+              </div>
+            </div>
+
+            <div class="tarjeta">
+              <div class="card-content">
+                <div class="card-number">{{total_reparadas}}</div>
+                <div class="card-title">A entregar</div>
+              </div>
+              <div class="icono">
+               <i class="fa-regular fa-calendar-check"></i>
+              </div>
+            </div>
+            <div class="tarjeta">
+              <div class="card-content">
+                <div class="card-number">{{total_ingresadas}}</div>
+                <div class="card-title">A Presupuestar</div>
+              </div>
+              <div class="icono">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+            </div>
+            <div class="tarjeta">
+              <div class="card-content">
+                <div class="card-number">{{total_aceptadas}}</div>
+                <div class="card-title">A reparar</div>
+              </div>
+              <div class="icono">
+               <i class="fa-solid fa-screwdriver-wrench"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-7">
+          <div class="progress" role="progressbar" aria-label="Default striped example" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar progress-bar-striped" style="width: 10%"></div>
+</div>
+<div class="progress" role="progressbar" aria-label="Success striped example" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar progress-bar-striped bg-success" style="width: 25%"></div>
+</div>
+<div class="progress" role="progressbar" aria-label="Info striped example" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar progress-bar-striped bg-info" style="width: 50%"></div>
+</div>
+<div class="progress" role="progressbar" aria-label="Warning striped example" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar progress-bar-striped bg-warning" style="width: 75%"></div>
+</div>
+<div class="progress" role="progressbar" aria-label="Danger striped example" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+  <div class="progress-bar progress-bar-striped bg-danger" style="width: 100%"></div>
+</div>
+          </div>
+        </div>
+
+
+     
+      </section>
+
+      <section class="row orders-table">    
+        <h5>Listado de Ordenes</h5>
+        <ul class="nav nav-tabs">
+                  <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#"  data-estado="todas">Todas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"   data-estado="ingresada">Ingresadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"  data-estado="presupuestada">Presupuestadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"  data-estado="aceptada">Aceptadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-estado="rechazada">Rechazadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-estado="entregada">Entregadas</a>
+            </li>
+
+        </ul>
+            
+<br>
+        <div class="table-responsive px-0">
+          <table class="table table-hover table-sm" id="tabla-ordenes">
+                <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Fecha ingreso</th>
+                      <th>Cliente</th>
+                      <th>Categoría</th>
+                      <th>Subcategoría</th>
+                      <th>Modelo</th>
+                      <th>Serie</th>
+                      <th>Accesorios</th>
+                      <th>Garantía</th>
+                      <th>Falla</th>
+                      <th>Fecha Estado</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                      <th>{%if orden_info.ultimo_estado != 'ingresada'%} Presupuesto {% endif %}</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla-ordenes-body">
+                              {% for orden_info in page_obj %}
+                    <tr>
+                      <td> <a href="{% url 'detalle_orden' orden_info.orden.id %}">{{ orden_info.orden.id }}</a></td>
+                      <td>{{ orden_info.orden.fecha_ingreso|date:"d/m/Y" }}</td>
+                      <td>
+                        <a href="{% url 'detalle_cliente' orden_info.cliente.id %}">
+                          {{ orden_info.cliente.nombre }} {{ orden_info.cliente.apellido }}
+                          {% if orden_info.cliente.empresa %}
+                          <br>{{ orden_info.cliente.razon_social }}
+                          {% endif %}
+                        </a>
+                      </td>
+                      <td>{{ orden_info.maquina.categoria }}</td>
+                      <td>{{ orden_info.maquina.subcategoria }}</td>
+                      <td>{{ orden_info.maquina.modelo }}</td>
+                      <td>{{ orden_info.maquina.serie }}</td> 
+                      <td>
+                        {% for accesorio in orden_info.accesorios %}
+                          {{ accesorio.nombre }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                      </td>
+                      <td>{{ orden_info.maquina.garantia|yesno:"Sí,No" }}</td>
+                      <td>{{ orden_info.maquina.falla }}</td>
+                      <td>{{ orden_info.fecha_ultimo_estado|date:"d/m/Y" }}</td>
+                      <td>
+                          {% if orden_info.ultimo_estado == 'ingresada' %}
+                            <span class="badge ingresada">Ingresada</span>
+                          {% elif orden_info.ultimo_estado == 'presupuestada' %}
+                            <span class="badge presupuestada">Presupuestada</span>
+                          {% elif orden_info.ultimo_estado == 'aceptada' %}  
+                            <span class="badge aceptada">Aceptada</span>
+                          {% elif orden_info.ultimo_estado == 'rechazada' %}  
+                            <span class="badge rechazada">Rechazada</span>
+                          {% elif orden_info.ultimo_estado == 'reparada' %}  
+                            <span class="badge reparada">Reparada</span>
+                          {% elif orden_info.ultimo_estado == 'entregada' %}  
+                            <span class="badge entregada">Entregada</span>
+                          {% endif %}  
+                      </td>
+                                <td>
+                        {% if orden_info.ultimo_estado == 'ingresada' %}
+                          <a href="{% url 'presupuestar_orden' orden_info.orden.id %}"><button class="btn btn-tbl presupuestar">Presupuestar</button></a>
+                        {% elif orden_info.ultimo_estado == 'presupuestada' %}
+                          <a href="{% url 'aceptar_presupuesto' orden_info.presupuesto_uuid %}"><button class="btn btn-tbl aceptada">Aceptar Presupuesto</button></a>
+                          <a href="{% url 'rechazar_presupuesto' orden_info.presupuesto_uuid  %}"><button class="btn btn-tbl rechazada">Rechazar Presupuesto</button></a>
+                        {% elif orden_info.ultimo_estado == 'aceptada' %}
+                          <a href="{% url 'reparar_orden' orden_info.orden.id %}"><button class="btn btn-tbl reparada">Reparar</button></a>
+                        {% elif orden_info.ultimo_estado == 'reparada' or orden_info.ultimo_estado == 'rechazada' %}
+                          <a href="{% url 'entregar_orden' orden_info.orden.id %}"><button class="btn btn-tbl entregada">Para entregar</button></a>
+                        {% endif %}
+                      </td>
+                      <td>{%if orden_info.ultimo_estado != 'ingresada'%} <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id %}">Ver P</a>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                    <!-- Paginación -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; primera</a>
+                <a href="?page={{ page_obj.previous_page_number }}">anterior</a>
+            {% endif %}
+
+            <span class="current">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">última &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+
+        </div>
+      </div>
+      <script type="text/javascript">
+          const urls = {
+              detalle_orden: "{% url 'detalle_orden' 0 %}".replace('/0/', '/'),
+              detalle_cliente: "{% url 'detalle_cliente' 0 %}".replace('/0/', '/'),
+              presupuestar_orden: "{% url 'presupuestar_orden' 0 %}".replace('/0/', '/'),
+              aceptar_presupuesto: "{% url 'aceptar_presupuesto' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', ''),
+              rechazar_presupuesto: "{% url 'rechazar_presupuesto' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', ''),
+              reparar_orden: "{% url 'reparar_orden' 0 %}".replace('/0/', '/'),
+              entregar_orden: "{% url 'entregar_orden' 0 %}".replace('/0/', '/'),
+              detalle_presupuesto: "{% url 'detalle_presupuesto' 0 %}".replace('/0/', '/')
+          };
+      </script>
+      <script src="{% static 'web/js/barraTablaestado.js' %}"></script>
+      {% endblock %} 
+ 
+ 
+ 
+ 
