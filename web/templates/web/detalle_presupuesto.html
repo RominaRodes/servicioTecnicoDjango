@@ -1,0 +1,144 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block titulo %}
+Detalle Presupuesto
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/detalle_orden.css' %}" />
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="col1">
+        <div class="cliente">
+            <div>
+                <h5>Cliente</h5>
+                {% if cliente.empresa %} 
+                <h4>{{ cliente.razon_social }}</h4>
+                <h4>{{ cliente.nombre }} {{ cliente.apellido }}</h4>
+                {% else %}
+                <h4>{{ cliente.nombre }} {{ cliente.apellido }}</h4>
+                {% endif %}
+            </div>
+        
+            <div>
+                <h5>Telefono</h5>
+                <h4>{{cliente.telefono}}</h4>
+            </div>
+            <div>        
+                <h5>Direccion</h5>
+                <h4>{{cliente.direccion}}</h4>
+                <h4>{{cliente.localidad}} - {{cliente.codigo_postal}}</h4>
+            </div>
+            <div>
+                <h5>Email</h5>
+                <h4><a href="mailto:{{object.cliente.email}}">{{cliente.email}}</a></h4>
+            </div>
+
+    </div>
+
+    <div class="maquina">
+        <div>
+            <h5>Categoria</h5>
+            <h4>{{maquina.categoria}}</h4>        
+        </div>
+
+        <div>
+            <h5>Subcategoria</h5>
+            <h4>{{maquina.subcategoria}}</h4>
+        </div>
+
+        <div>
+            <h5>Modelo</h5>
+            <h4>{{maquina.modelo}}</h4>
+        </div>
+
+        <div>
+            <h5>Serie</h5>
+            <h4>{{maquina.serie}}</h4>
+        </div>
+
+        <div>
+            <h5>Accesorios</h5>  
+        {% if accesorios %}
+            <ul>
+                {% for accesorio in accesorios %}
+                    <li>{{ accesorio }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No hay accesorios</p>
+        {% endif %}     
+        </div>
+
+        <div>
+            <h5>Garantía</h5>
+            <h4>{{ maquina.garantia|yesno:"Sí,No" }}</h4>
+        </div>
+
+        <div>  
+            <h5>Falla</h5>
+            <h4>{{maquina.falla}}</h4>
+        </div>
+
+        <div>
+            <h5>Notas</h5>
+            <h4>{{ orden.notas }}</h4>
+        </div>
+
+    </div>
+    </div>
+
+   <div class="col2">  
+    <div class="row1">
+        <div class="estado">
+            <h5>La orden  {{ object.id }} está</h5>  
+            <h2>{{ ultimo_historial_estado.estado|capfirst }}</h2>
+            <h5>al {{ ultimo_historial_estado.fecha_cambio|date:"d/m/Y" }}</h5>
+            <hr>
+        </div>
+      
+    </div>  
+<div class="row2">
+    <h3 class="heading">Presupuesto</h3>
+    <div class="presupuesto">
+         <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
+        <tr>
+            <th>fecha de creacion</th>
+            <td>{{ object.fecha_creacion }}</td>
+        </tr>
+                    <tr>
+                        {%if object.aprobado %}
+            <th>fecha de aprobacion</th>
+            <td>{{ object.fecha_aprobacion }}</td>
+        </tr>
+        {%endif%}
+                                {%if object.rechazado %}
+            <th>fecha de rechazo</th>
+            <td>{{ object.fecha_rechazo }}</td>
+        </tr>
+       {%endif%}
+            {% if not object.rechazado and not object.aprobado %}
+            <th>Estado</th>
+            <td>Pendiente de aprobacion o rechazo</td>
+        </tr>
+      {% endif %}
+                    <tr>
+            <th>Descripcion</th>
+            <td>{{ object.descripcion }}</td>
+        </tr>
+                    <tr>
+            <th>Total</th>
+            <td>{{ object.total }}$</td>
+        </tr>
+
+         </table>
+        
+
+    </div>
+  <a href="{% url 'mandar_mail_presupuesto' object.id %}" class="btn btn-primary">mandar mail</a>
+  <a href="{% url 'editar_presupuesto' object.id %}" class="btn btn-primary">Editar</a>
+</div>
+{% endblock %}

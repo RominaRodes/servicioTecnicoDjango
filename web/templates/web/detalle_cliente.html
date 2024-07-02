@@ -1,0 +1,87 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block titulo %}
+Detalle del Cliente
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/cliente_detail.css' %}" />
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <h1>Detalle del Cliente</h1>
+    <table class="table table-striped">
+        <tr>
+            <th>Nombre</th>
+            <td>{{ object.nombre }}</td>
+        </tr>
+        <tr>
+            <th>Apellido</th>
+            <td>{{ object.apellido }}</td>
+        </tr>
+        <tr>
+            <th>Empresa</th>
+            <td>{% if object.empresa %}{{ object.razon_social }}{% else %}No{% endif %}</td>
+        </tr>
+        <tr>
+            <th>Condición IVA</th>
+            <td>{{ object.condicion_iva }}</td>
+        </tr>
+        <tr>
+            <th>Domicilio</th>
+            <td>{{ object.domicilio }}</td>
+        </tr>
+        <tr>
+            <th>Localidad</th>
+            <td>{{ object.localidad }}</td>
+        </tr>
+        <tr>
+            <th>Código Postal</th>
+            <td>{{ object.codigo_postal }}</td>
+        </tr>
+        <tr>
+            <th>Teléfono</th>
+            <td>{{ object.telefono }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ object.email }}</td>
+        </tr>
+    </table>
+
+    <h2>Órdenes de Reparación</h2>
+    {% if ordenes %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha de Ingreso</th>
+                <th>Estado</th>
+                <th>Notas</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orden in ordenes %}
+            <tr>
+                <td>{{ orden.id }}</td>
+                <td>{{ orden.fecha_ingreso|date:"d/m/Y" }}</td>
+                <td>{{ orden.estado }}</td>
+                <td>{{ orden.notas }}</td>
+                <td>
+                    <a href="{% url 'detalle_orden' orden.id %}" class="btn btn-primary">Ver Detalle</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No hay ordenes ingresadas</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

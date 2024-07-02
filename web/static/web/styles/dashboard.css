@@ -1,0 +1,57 @@
+/*------------Tags y botones table -------------*/
+
+span.badge.ingresada {
+  background: var(--color-badge-alta1-opacity70);
+}
+
+span.badge.presupuestada {
+  background: var(--color-badge-presupuestada-opacity50);
+}
+
+span.badge.aceptada {
+  background: var(--color-badge-aceptada-opacity50);
+}
+
+span.badge.rechazada {
+  background: var(--color-badge-rechazada-opacity50);
+}
+
+span.badge.reparada {
+  background: var(--color-badge-reparada-opacity50);
+}
+
+span.badge.entregada {
+  background: var(--color-badge-entregada);
+}
+
+button.btn.btn-tbl {
+  --bs-btn-padding-y: 0.1rem;
+  --bs-btn-padding-x: 0.2rem;
+  --bs-btn-font-size: 0.75rem;
+  font-weight: 700;
+}
+
+button.btn.presupuestar {
+  color: var(--color-badge-alta1-opacity70);
+  border: 1px solid var(--color-badge-alta);
+}
+
+button.btn.aceptada {
+  color: var(--color-badge-aceptada);
+  border: 1px solid var(--color-badge-aceptada);
+}
+
+button.btn.rechazada {
+  color: var(--color-badge-rechazada-opacity50);
+  border: 1px solid var(--color-badge-rechazada-opacity50);
+}
+
+button.btn.reparada {
+  color: var(--color-badge-reparada);
+  border: 1px solid var(--color-badge-reparada);
+}
+
+button.btn.entregada {
+  color: var(--color-badge-entregada);
+  border: 1px solid var(--color-badge-entregada);
+}

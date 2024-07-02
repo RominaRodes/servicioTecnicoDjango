@@ -1,0 +1,64 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block titulo %}
+  Crear Cliente
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+{% endblock %}
+
+{% block main %}
+<div class="container">
+  <h1>Crear Cliente</h1>
+  <form method="post">
+    {% csrf_token %}
+    <div class="row">
+      <div class="col-md-6">
+        {% for field in form %}
+          {% if forloop.counter0 < half %}
+            <div class="form-group">
+              {{ field.label_tag }}
+              {% if field.name == "empresa" %}
+                <div class="form-check">
+                  {{ field|add_class:"form-check-input" }}
+                  {{ field.errors }}
+                </div>
+              {% else %}
+                {{ field|add_class:"form-control" }}
+                {{ field.errors }}
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="col-md-6">
+        {% for field in form %}
+          {% if forloop.counter0 >= half %}
+            <div class="form-group">
+              {{ field.label_tag }}
+              {% if field.name == "empresa" %}
+                <div class="form-check">
+                  {{ field|add_class:"form-check-input " }}
+                  {{ field.errors }}
+                </div>
+              {% else %}
+                {{ field|add_class:"form-control" }}
+                {{ field.errors }}
+              {% endif %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+  </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}

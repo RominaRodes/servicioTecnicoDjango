@@ -1,0 +1,132 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block titulo %}
+Detalle de la Orden de Reparación
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/detalle_orden.css' %}" />
+{% endblock %}
+
+{% block main %}
+<div class="container">
+    <div class="col1">
+        <div class="cliente">
+            <div>
+                <h5>Cliente</h5>
+                {% if object.cliente.empresa %} 
+                <h4>{{ object.cliente.razon_social }}</h4>
+                <h4>Contacto: >{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
+                {% else %}
+                <h4>{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
+                {% endif %}
+            </div>
+        
+            <div>
+                <h5>Telefono</h5>
+                <h4>{{object.cliente.telefono}}</h4>
+            </div>
+            <div>        
+                <h5>Direccion</h5>
+                <h4>{{object.cliente.direccion}}</h4>
+                <h4>{{object.cliente.localidad}} - {{object.cliente.codigo_postal}}</h4>
+            </div>
+            <div>
+                <h5>Email</h5>
+                <h4><a href="mailto:{{object.cliente.email}}">{{object.cliente.email}}</a></h4>
+            </div>
+
+    </div>
+
+    <div class="maquina">
+        <div>
+            <h5>Categoria</h5>
+            <h4>{{object.maquina.categoria}}</h4>        
+        </div>
+
+        <div>
+            <h5>Subcategoria</h5>
+            <h4>{{object.maquina.subcategoria}}</h4>
+        </div>
+
+        <div>
+            <h5>Modelo</h5>
+            <h4>{{object.maquina.modelo}}</h4>
+        </div>
+
+        <div>
+            <h5>Serie</h5>
+            <h4>{{object.maquina.serie}}</h4>
+        </div>
+
+        <div>
+            <h5>Accesorios</h5>       
+        </div>
+
+        <div>
+            <h5>Garantía</h5>
+            <h4>{{ object.maquina.garantia|yesno:"Sí,No" }}</h4>
+        </div>
+
+        <div>  
+            <h5>Falla</h5>
+            <h4>{{object.maquina.falla}}</h4>
+        </div>
+
+        <div>
+            <h5>Notas</h5>
+            <h4>{{object.notas}}</h4>
+        </div>
+
+    </div>
+    </div>
+
+   <div class="col2">  
+    <div class="row1">
+        <div class="estado">
+            <h5>La orden  {{ object.id }} está</h5>  
+            <h2>{{ object.estado|capfirst }}</h2>
+            <h5>al {{ ultimo_historial_estado.fecha_cambio|date:"d/m/Y" }}</h5>
+            <hr>
+        </div>
+      
+    </div>  
+<div class="row2">
+    <h3 class="heading">Historial</h3>
+    <div class="timeline">
+        {% for state in estados %}
+        <div class="timeline-row">
+            <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-right">
+                <div class="timeline-content">
+                    <h4>{{ state|capfirst }}</h4>
+                </div>
+            </div>
+            <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-left">
+                <div class="timeline-content timeline-date">
+                    <span>
+                        {% for historial in historial %}
+                            {% if historial.estado == state %}
+                                {{ historial.fecha_cambio|date:"d/m/Y" }}
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+    
+   </div>
+
+
+ 
+    
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
