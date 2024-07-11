@@ -29,7 +29,8 @@
   </head>
 
   <body class="d-flex">
-    <div class="wrapper d-flex vh-100" id="sidebar-wrapper">
+    {% include 'web/sidebar.html' %}
+    <!-- <div class="wrapper d-flex vh-100" id="sidebar-wrapper">
       <aside id="sidebar">
         <div class="d-flex justify-content-center">
           <button id="toggle-btn" type="button">
@@ -94,40 +95,44 @@
           </a>
         </div>
       </aside>
-    </div>
+    </div> -->
 
-    <div
-      class="wrapper d-flex flex-column min-vh-100 w-100"
-      id="main-section-container"
-    >
+    <div class="wrapper d-flex flex-column min-vh-100 w-100" id="main-section-container">
       <header>
-        <nav class="navbar py-0 bg-body-tertiary">
-          <div class="container-fluid my-3">
-            <form class="d-flex" role="search">
+        <nav class="navbar py-0 bg-body-tertiary d-flex flex-row align-items-center">
+          <div class="my-3">
+            <form action="{% url 'search_results' %}" method="get" class="d-flex p-3" role="search">
               <input
                 class="form-control me-2"
-                type="search"
-                placeholder="Search"
-                aria-label="Search"
+                type="text"
+                placeholder="buscar..."
+                name="q"
               />
-              <button class="btn btn-outline-success" type="submit">
-                Search
+              <button class="btn btn-outline-primary" type="submit">
+                Buscar
               </button>
             </form>
+          </div>  
+          <div class="d-flex flex-row align-items-center">
+            {% if messages %}
+              <ul class="messages m-0 ">
+                {% for message in messages %}
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              {% endfor %}
+            </ul>
+          {% endif %} 
+            <a class='p-3 my-3' href=#><i class="fas fa-user"></i></a>
           </div>
-        </nav>
+        </nav>      
+    
+
       </header>
-      {% if messages %}
-      <div>
-        <ul class="messages">
-          {% for message in messages %}
-          <li {% if message.tags %} class="{{message.tags}}" {%endif%}>
-            {{message}}
-          </li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %} {% block main %}{% endblock %}
+
+      {% block main %}
+      {% endblock %}
     </div>
     
 {% block extra_js %}

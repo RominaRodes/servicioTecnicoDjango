@@ -162,7 +162,7 @@ class OrdenDeReparacion(models.Model):
             HistorialEstado.objects.create(orden=self, estado=self.estado)
 
     def __str__(self):
-        return f"Orden {self.pk} - {self.cliente.nombre} {self.cliente.apellido} - {self.estado}"
+        return f"Orden {self.pk} - {self.cliente.nombre} {self.cliente.apellido}"
 
 class HistorialEstado(models.Model):
     ESTADOS = OrdenDeReparacion.ESTADOS

@@ -6,19 +6,45 @@ Listado de Órdenes de Reparación
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'web/styles/lista_ordenes.css' %}" />
  <link
       rel="stylesheet"
       type="text/css"
       href="{% static 'web/styles/dashboard.css' %}"
     />
+  <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'web/styles/index_styles.css' %}"
+    /> 
 {% endblock %}
 
 {% block main %}
-<div class="container">
+<div class="container-fluid px-4">
   <h1>Lista de Órdenes de Reparación</h1>
-  <a href="{% url 'crear_orden' %}" class="btn btn-primary">Nueva Orden</a>
-  <table class="table table-striped">
+  <a href="{% url 'crear_orden' %}" class="btn btn-primary my-3">Nueva Orden</a>
+ 
+    <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" href="#"  data-estado="todas">Todas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"   data-estado="ingresada">Ingresadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"  data-estado="presupuestada">Presupuestadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#"  data-estado="aceptada">A reparar</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-estado="rechazada">Rechazadas</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-estado="entregada">Entregadas</a>
+            </li>
+        </ul>
+  <div class="table-responsive">
+    <table class="table table-hover table-striped">
     <thead>
       <tr>
         <th>ID</th>
@@ -37,7 +63,7 @@ Listado de Órdenes de Reparación
         <th>{%if orden_info.ultimo_estado != 'ingresada'%} Presupuesto {% endif %}</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody class="tabla-ordenes-body">
       {% for orden_info in ordenes_info %}
       <tr>
         <td> <a href="{% url 'detalle_orden' orden_info.orden.id %}">{{ orden_info.orden.id }}</a></td>
@@ -81,24 +107,39 @@ Listado de Órdenes de Reparación
             {% if orden_info.ultimo_estado == 'ingresada' %}
                 <a href="{% url 'presupuestar_orden' orden_info.orden.id %}"><button class="btn btn-tbl presupuestar">Presupuestar</button></a>
             {% elif orden_info.ultimo_estado == 'presupuestada' %}
-                <a href="{% url 'aceptar_presupuesto' orden_info.presupuesto.uuid %}"><button class="btn btn-tbl aceptada">Aceptar Presupuesto</button></a>
-                <a href="{% url 'rechazar_presupuesto' orden_info.presupuesto.uuid %}"><button class="btn btn-tbl rechazada">Rechazar Presupuesto</button></a>
+                <a href="{% url 'aceptar_presupuesto' orden_info.presupuesto_uuid %}"><button class="btn btn-tbl aceptada">Aceptar Presupuesto</button></a>
+                <a href="{% url 'rechazar_presupuesto' orden_info.presupuesto_uuid %}"><button class="btn btn-tbl rechazada">Rechazar Presupuesto</button></a>
             {% elif orden_info.ultimo_estado == 'aceptada' %}
                 <a href="{% url 'reparar_orden' orden_info.orden.id %}"><button class="btn btn-tbl reparada">Reparar</button></a>
             {% elif orden_info.ultimo_estado == 'reparada' or orden_info.ultimo_estado == 'rechazada' %}
                 <a href="{% url 'entregar_orden' orden_info.orden.id %}"><button class="btn btn-tbl entregada">Para entregar</button></a>
             {% endif %}
             </td>
-            <td>{% if orden_info.ultimo_estado != 'ingresada' and orden_info.presupuesto %}
-                    <a href="{% url 'detalle_presupuesto' orden_info.presupuesto.id %}">Ver Presupuesto</a>
+            <td>{% if orden_info.ultimo_estado != 'ingresada' and orden_info.presupuesto_id %}
+                    <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id %}"><i class="fa-solid fa-file-pen"></i></a>
                 {% endif %}
           </td>
-         </tr>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+</div>
 {% endblock %}
 
 {% block extra_js %}
+      <script type="text/javascript">
+          const urls = {
+              detalle_orden: "{% url 'detalle_orden' 0 %}".replace('/0/', '/'),
+              detalle_cliente: "{% url 'detalle_cliente' 0 %}".replace('/0/', '/'),
+              presupuestar_orden: "{% url 'presupuestar_orden' 0 %}".replace('/0/', '/'),
+              aceptar_presupuesto: "{% url 'aceptar_presupuesto' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', ''),
+              rechazar_presupuesto: "{% url 'rechazar_presupuesto' '00000000-0000-0000-0000-000000000000' %}".replace('00000000-0000-0000-0000-000000000000', ''),
+              reparar_orden: "{% url 'reparar_orden' 0 %}".replace('/0/', '/'),
+              entregar_orden: "{% url 'entregar_orden' 0 %}".replace('/0/', '/'),
+              detalle_presupuesto: "{% url 'detalle_presupuesto' 0 %}".replace('/0/', '/')
+          };
+      </script>
+      <script src="{% static 'web/js/barraTablaestado.js' %}"></script>
 {% endblock %}

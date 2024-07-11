@@ -85,3 +85,22 @@ li {
   font-size: 2.15rem;
   color: var(--color-badge-entregada);
 }
+
+a.nav-link{
+  text-decoration: none;
+  color:var(--bs-gray-700)
+}
+a.nav-link.active{
+    color: black;
+    font-weight: 800;
+}
+
+#tabla-ordenes td a i {
+  color: var(--bs-gray-700);
+  font-weight: 500;
+}
+
+#tabla-ordenes th {
+  background-color:  #2a4a77;
+  color:white;
+}

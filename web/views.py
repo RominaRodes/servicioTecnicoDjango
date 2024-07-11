@@ -1,10 +1,13 @@
+from django.db.models.base import Model as Model
+from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .forms import ClienteForm, DetalleClienteForm, OrdenDeReparacionForm,  PresupuestoForm, MaquinaForm
 from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, HistorialEstado, SubCategoria, Modelo, Categoria, Accesorio
 import math 
+from django.views.generic import TemplateView, ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -30,6 +33,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from django.conf import settings
 from email.mime.image import MIMEImage
+from django.db.models import Q
+from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.contrib import messages
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +57,7 @@ def index(request):
         else:
             presupuesto_uuid = None
             presupuesto_id = None
-        print(f'esto es el presupuesto {presupuesto}')
+
         orden_info = {
             'orden': orden,
             'cliente': orden.cliente,
@@ -72,11 +78,11 @@ def index(request):
         'total_ordenes': OrdenDeReparacion.objects.count(),
         'total_ingresadas': OrdenDeReparacion.objects.filter(estado='ingresada').count(),
         'total_aceptadas': OrdenDeReparacion.objects.filter(estado='aceptada').count(),
-        'total_reparadas': OrdenDeReparacion.objects.filter(estado='reparada').count(),
+        'total_reparadas': OrdenDeReparacion.objects.filter(Q(estado='reparada') | Q(estado='rechazada')).count(),
         'total_entregadas': OrdenDeReparacion.objects.filter(estado='entregada').count(),
         'page_obj': page_obj,
     }
-
+    messages.success(request, 'este es un mensaje de success')
     return render(request, 'web/index.html', context)
 
 def get_todas_las_ordenes(request):
@@ -165,149 +171,23 @@ def get_ordenes_por_estado(request, estado):
     data = {'message': 'Success', 'ordenes': ordenes_info}
     return JsonResponse(data, safe=False)
 
+class SearchResultsView(ListView):
+    model = OrdenDeReparacion
+    template_name = 'web/search_results.html'
 
+    def get_queryset(self):  
+        query = self.request.GET.get("q")
+        if not query:
+            return OrdenDeReparacion.objects.none()
 
+        vector = SearchVector('id', 'maquina__serie', 'maquina__categoria__nombre', 'estado', 'cliente__id', 'cliente__razon_social', 'cliente__apellido')
+        search_query = SearchQuery(query)
 
+        object_list = OrdenDeReparacion.objects.annotate(
+            search=vector
+        ).filter(search=search_query)
 
-
-
-# def index(request):
-#     estado = request.GET.get('estado', '')
-#     if estado:
-#         ordenes = OrdenDeReparacion.objects.filter(estado=estado)
-#     else:
-#         ordenes = OrdenDeReparacion.objects.all()
-    
-#     ordenes_info = []
-#     for orden in ordenes:
-#         ultimo_historial = HistorialEstado.objects.filter(orden=orden).latest('fecha_cambio')
-#         accesorios = orden.maquina.accesorios.all()
-#         presupuesto= Presupuesto.objects.filter(orden=orden.id).first()
-#         presupuesto_uuid = presupuesto.uuid
-#         presupuesto_id = presupuesto.id
-#         print(f'esto es el presupuesto {presupuesto}')
-#         orden_info = {
-#             'orden': orden,
-#             'cliente': orden.cliente,
-#             'maquina': orden.maquina,
-#             'accesorios': accesorios,
-#             'ultimo_estado': ultimo_historial.estado,
-#             'fecha_ultimo_estado': ultimo_historial.fecha_cambio,
-#             'presupuesto_uuid': presupuesto_uuid,
-#             'presupuesto_id': presupuesto_id
-#         }
-#         ordenes_info.append(orden_info)
-
-#     paginator = Paginator(ordenes_info, 15)
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-
-#     context = {
-#         'total_ordenes': OrdenDeReparacion.objects.count(),
-#         'total_ingresadas': OrdenDeReparacion.objects.filter(estado='ingresada').count(),
-#         'total_aceptadas': OrdenDeReparacion.objects.filter(estado='aceptada').count(),
-#         'total_reparadas': OrdenDeReparacion.objects.filter(estado='reparada').count(),
-#         'total_entregadas': OrdenDeReparacion.objects.filter(estado='entregada').count(),
-#         'page_obj': page_obj,
-#     }
-
-#     return render(request, 'web/index.html', context)
-
-
-# def get_todas_las_ordenes(request):
-#     ordenes_qs = OrdenDeReparacion.objects.all()
-#     ordenes_info = []
-
-#     for orden in ordenes_qs:
-#         ultimo_historial = HistorialEstado.objects.filter(orden=orden).latest('fecha_cambio')
-#         accesorios = orden.maquina.accesorios.all()
-#         presupuesto = Presupuesto.objects.filter(orden=orden).first()
-#         presupuesto_uuid = presupuesto.uuid if presupuesto else None
-#         presupuesto_id = presupuesto.id if presupuesto else None
-
-#         orden_info = {
-#             'orden': {
-#                 'id': orden.id,
-#                 'cliente': {
-#                     'id': orden.cliente.id,
-#                     'nombre': orden.cliente.nombre,
-#                     'apellido': orden.cliente.apellido,
-#                     'empresa': orden.cliente.empresa,
-#                     'razon_social': orden.cliente.razon_social
-#                 },
-#                 'maquina': {
-#                     'id': orden.maquina.id,
-#                     'categoria': orden.maquina.categoria.nombre,
-#                     'subcategoria': orden.maquina.subcategoria.nombre,
-#                     'modelo': orden.maquina.modelo.nombre,
-#                     'serie': orden.maquina.serie,
-#                 },
-#                 'estado': orden.estado,
-#                 'fecha_ingreso': orden.fecha_ingreso,
-#                 'notas': orden.notas,
-#             },
-#             'accesorios': list(accesorios.values('nombre')),
-#             'ultimo_estado': ultimo_historial.estado,
-#             'fecha_ultimo_estado': ultimo_historial.fecha_cambio,
-#             'presupuesto_id': presupuesto_id,
-#             'presupuesto_uuid': presupuesto_uuid
-#         }
-#         ordenes_info.append(orden_info)
-
-#     data = {'message': 'Success', 'ordenes': ordenes_info}
-#     return JsonResponse(data, safe=False)
-
-
-# def get_ordenes_por_estado(request, estado):
-#     ordenes_qs = OrdenDeReparacion.objects.filter(estado=estado)
-#     ordenes_info = []
-
-#     for orden in ordenes_qs:
-#         ultimo_historial = HistorialEstado.objects.filter(orden=orden).latest('fecha_cambio')
-#         accesorios = orden.maquina.accesorios.all()
-#         presupuesto = Presupuesto.objects.filter(orden=orden).first()
-#         presupuesto_id = presupuesto.id if presupuesto else None
-#         presupuesto_uuid = presupuesto.uuid if presupuesto else None
-
-#         orden_info = {
-#             'orden': {
-#                 'id': orden.id,
-#                 'cliente': {
-#                     'id': orden.cliente.id,
-#                     'nombre': orden.cliente.nombre,
-#                     'apellido': orden.cliente.apellido,
-#                     'empresa': orden.cliente.empresa,
-#                     'razon_social': orden.cliente.razon_social
-#                 },
-#                 'maquina': {
-#                     'id': orden.maquina.id,
-#                     'categoria': orden.maquina.categoria.nombre,
-#                     'subcategoria': orden.maquina.subcategoria.nombre,
-#                     'modelo': orden.maquina.modelo.nombre,
-#                     'serie': orden.maquina.serie,
-#                 },
-#                 'estado': orden.estado,
-#                 'fecha_ingreso': orden.fecha_ingreso,
-#                 'notas': orden.notas,
-#             },
-#             'accesorios': list(accesorios.values('nombre')),
-#             'ultimo_estado': ultimo_historial.estado,
-#             'fecha_ultimo_estado': ultimo_historial.fecha_cambio,
-#             'presupuesto_id': presupuesto_id,
-#             'presupuesto_uuid': presupuesto_uuid,
-#         }
-#         ordenes_info.append(orden_info)
-
-#     data = {'message': 'Success', 'ordenes': ordenes_info}
-#     return JsonResponse(data, safe=False)
-
-def maquinas(request):
-    return render(request,'web/maquinas.html')
-
-def destructoras(request):
-    return render(request, 'web/destructoras.html')
-
-
+        return object_list
 
 def lista_clientes(request):
     clientes = Cliente.objects.all()
@@ -317,7 +197,8 @@ def crear_cliente(request):
     if request.method == "POST":
         form = ClienteForm(request.POST)
         if form.is_valid():
-            form.save()
+            cliente = form.save()
+            messages.success(request, f'El cliente id: {cliente} fue creado con éxito')
             return redirect('lista_clientes')
     else:
         form = ClienteForm()
@@ -325,7 +206,6 @@ def crear_cliente(request):
     half = math.ceil(total_fields / 2)
     
     return render(request, 'web/crear_cliente.html', {'form': form, 'half': half})
-
 
 class ClienteDetailView(DetailView):
     model = Cliente
@@ -342,6 +222,7 @@ def editar_cliente(request, pk):
         form = ClienteForm(request.POST, instance=cliente)
         if form.is_valid():
             form.save()
+            messages.success(request, f'El cliente id: {cliente} fue editado con éxito')
             return redirect('detalle_cliente', pk=cliente.pk)
     else:
         form = ClienteForm(instance=cliente)
@@ -349,16 +230,24 @@ def editar_cliente(request, pk):
     total_fields = len(form.fields)
     half = math.ceil(total_fields / 2)
 
-    return render(request, 'web/editar_cliente.html', {'form': form, 'half':half})
+    return render(request, 'web/editar_cliente.html', {'form': form, 'half': half})
 
-def eliminar_cliente(request, pk):
-    cliente = get_object_or_404(Cliente, pk=pk)
-    if request.method == 'POST':
-        cliente.delete()
-        return redirect('lista_clientes')
-    return render(request, 'web/eliminar_cliente.html', {'cliente': cliente})
+class ClienteDeleteView(DeleteView):
+    model: Cliente
+    #template_name = 'cliente_confirm_delete.html'
+    success_url = reverse_lazy('lista_clientes')
+    def get_object(self):
+        id_ = self.kwargs.get("pk")
+        return get_object_or_404(Cliente, id=id_)
 
-
+# def eliminar_cliente(request, pk):
+#     cliente = get_object_or_404(Cliente, pk=pk)
+#     if request.method == 'POST':
+#         cliente.delete()
+#         messages.success(request, "El cliente fue eliminado con éxito")
+#         return redirect('lista_clientes')
+    
+#     return render(request, 'web/eliminar_cliente.html', {'cliente': cliente})
 
 def crear_orden(request):
     if request.method == 'POST':
@@ -370,6 +259,7 @@ def crear_orden(request):
             orden = orden_form.save(commit=False)
             orden.maquina = maquina
             orden.save()
+            messages.success(request, f'La {orden} fue ingresada con éxito')
             return redirect('listado_ordenes')  
     else:
         orden_form = OrdenDeReparacionForm()
@@ -381,19 +271,24 @@ def crear_orden(request):
     })
 
 def lista_ordenes(request):
-    ordenes = OrdenDeReparacion.objects.select_related(
-        'cliente', 
-        'maquina__categoria', 
-        'maquina__subcategoria', 
-        'maquina__modelo'
-    ).prefetch_related('maquina__accesorios').order_by('-fecha_ingreso')
+    estado = request.GET.get('estado', '')
+    if estado:
+        ordenes = OrdenDeReparacion.objects.filter(estado=estado)
+    else:
+        ordenes = OrdenDeReparacion.objects.all()
     
     ordenes_info = []
-
     for orden in ordenes:
         ultimo_historial = HistorialEstado.objects.filter(orden=orden).latest('fecha_cambio')
-        presupuesto = Presupuesto.objects.filter(orden=orden).first()  # Get the first presupuesto if exists
         accesorios = orden.maquina.accesorios.all()
+        presupuesto = Presupuesto.objects.filter(orden=orden.id).first()
+        if presupuesto:
+            presupuesto_uuid = presupuesto.uuid
+            presupuesto_id = presupuesto.id
+        else:
+            presupuesto_uuid = None
+            presupuesto_id = None
+
         orden_info = {
             'orden': orden,
             'cliente': orden.cliente,
@@ -401,11 +296,18 @@ def lista_ordenes(request):
             'accesorios': accesorios,
             'ultimo_estado': ultimo_historial.estado,
             'fecha_ultimo_estado': ultimo_historial.fecha_cambio,
-            'presupuesto': presupuesto
+            'presupuesto_uuid': presupuesto_uuid,
+            'presupuesto_id': presupuesto_id
         }
+    
         ordenes_info.append(orden_info)
+    
+    context = {
+    'ordenes_info': ordenes_info,
+    }
+    return render(request, 'web/lista_ordenes.html', context)
 
-    return render(request, 'web/lista_ordenes.html', {'ordenes_info': ordenes_info})
+
 
 def presupuestar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, pk=orden_id)

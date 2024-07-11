@@ -25,21 +25,30 @@ class DetalleClienteForm(forms.ModelForm):
         for field in self.fields.values():
             field.widget.attrs['readonly'] = True
 
+
 class MaquinaForm(forms.ModelForm):
     class Meta:
         model = Maquina
-        fields = '__all__'
+        fields = ['categoria', 'subcategoria', 'modelo', 'serie', 'falla', 'garantia', 'accesorios']
         widgets = {
-            'categoria': forms.Select(attrs={'id': 'attrcategoria'}),
-            'subcategoria': forms.Select(attrs={'id': 'attrsubcategoria'}),
-            'modelo': forms.Select(attrs={'id': 'attrmodelo'}),
-            'accesorios': forms.CheckboxSelectMultiple(attrs={'id': 'attraccesorios'}),  # Este ya es un CheckboxSelectMultiple
+            'categoria': forms.Select(attrs={'id': 'attrcategoria', 'class': 'form-select'}),
+            'subcategoria': forms.Select(attrs={'id': 'attrsubcategoria', 'class': 'form-select'}),
+            'modelo': forms.Select(attrs={'id': 'attrmodelo', 'class': 'form-select'}),
+            'serie': forms.TextInput(attrs={'class': 'form-control'}),
+            'falla': forms.Select(attrs={'class': 'form-select'}),
+            'garantia': forms.CheckboxInput(attrs={'class': 'form-check'}),
+            'accesorios': forms.CheckboxSelectMultiple(attrs={'id': 'attraccesorios', 'class': 'form-check p-0'}),
         }
+
 
 class OrdenDeReparacionForm(forms.ModelForm):
     class Meta:
         model = OrdenDeReparacion
         fields = ['cliente', 'notas']
+        widgets = {
+            'cliente': forms.Select(attrs={'class': 'form-select'}),
+            'notas': forms.Textarea(attrs={'class': 'form-control'})
+        }
 
 class PresupuestoForm(forms.ModelForm):
     class Meta:
