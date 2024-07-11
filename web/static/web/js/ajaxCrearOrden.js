@@ -1,3 +1,23 @@
+// const listarAccesorios = async (id_categoria) => {
+//     try {
+//         const response = await fetch(`crearorden/accesorios/${id_categoria}`);
+//         const data = await response.json();
+//         console.log(data);
+//         if (data.message === 'Success') {
+//             let opciones = ``;
+//             data.accesorios.forEach((accesorio) => {
+//                 opciones += `<label><input type="checkbox" name="accesorios" value="${accesorio.id}">${accesorio.nombre}</label>`;
+//             });
+//             document.getElementById('attraccesorios').innerHTML = opciones;
+//         } else {
+//             document.getElementById('attraccesorios').innerHTML = '<p>No hay accesorios disponibles</p>';
+//             console.log('No existen accesorios...');
+//         }
+//     } catch (error) {
+//         console.log('Error al listar accesorios:', error);
+//         document.getElementById('attraccesorios').innerHTML = '<p>Error al cargar accesorios</p>';
+//     }
+// };
 const listarAccesorios = async (id_categoria) => {
     try {
         const response = await fetch(`crearorden/accesorios/${id_categoria}`);
@@ -6,7 +26,11 @@ const listarAccesorios = async (id_categoria) => {
         if (data.message === 'Success') {
             let opciones = ``;
             data.accesorios.forEach((accesorio) => {
-                opciones += `<label><input type="checkbox" name="accesorios" value="${accesorio.id}">${accesorio.nombre}</label><br>`;
+                opciones += `
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="accesorios" value="${accesorio.id}" id="accesorio-${accesorio.id}">
+                        <label for="accesorio-${accesorio.id}">${accesorio.nombre}</label>
+                    </div>`;
             });
             document.getElementById('attraccesorios').innerHTML = opciones;
         } else {
@@ -18,7 +42,6 @@ const listarAccesorios = async (id_categoria) => {
         document.getElementById('attraccesorios').innerHTML = '<p>Error al cargar accesorios</p>';
     }
 };
-
 
 
 
@@ -43,66 +66,6 @@ const listarModelos = async (id_subcategoria) => {
     }
 };
 
-// const listarSubcategorias = async (id_categoria) => {
-//     try {
-//         const response = await fetch(`crearorden/subcategorias/${id_categoria}`);
-//         const data = await response.json();
-//         console.log(data);
-//         if (data.message === 'Success') {
-//             let opciones = ``;
-//             data.subcategorias.forEach((subcategoria) => {
-//                 opciones += `<option value="${subcategoria.id}">${subcategoria.nombre}</option>`;
-//             });
-//             attrsubcategoria.innerHTML = opciones;
-//             // Listar modelos de la primera subcategoría
-//             if (data.subcategorias.length > 0) {
-//                 await listarModelos(data.subcategorias[0].id);
-//             } else {
-//                 attrmodelo.innerHTML = '<option value="">No hay modelos disponibles</option>';
-//             }
-//         } else {
-//             attrsubcategoria.innerHTML = '<option value="">No hay subcategorías disponibles</option>';
-//             attrmodelo.innerHTML = '<option value="">No hay modelos disponibles</option>';
-//             console.log('No existen subcategorías...');
-//         }
-//     } catch (error) {
-//         console.log('Error al listar subcategorías:', error);
-//         attrsubcategoria.innerHTML = '<option value="">Error al cargar subcategorías</option>';
-//         attrmodelo.innerHTML = '<option value="">Error al cargar modelos</option>';
-//     }
-// };
-
-// const listarCategorias = async () => {
-//     try {
-//         const response = await fetch('crearorden/categorias');
-//         const data = await response.json();
-//         console.log(data);
-//         if (data.message === 'Success') {
-//             let opciones = ``;
-//             data.categorias.forEach((categoria) => {
-//                 opciones += `<option value="${categoria.id}">${categoria.nombre}</option>`;
-//             });
-//             attrcategoria.innerHTML = opciones;
-//             // Listar subcategorías y modelos de la primera categoría
-//             if (data.categorias.length > 0) {
-//                 await listarSubcategorias(data.categorias[0].id);
-//             } else {
-//                 attrsubcategoria.innerHTML = '<option value="">No hay subcategorías disponibles</option>';
-//                 attrmodelo.innerHTML = '<option value="">No hay modelos disponibles</option>';
-//             }
-//         } else {
-//             attrcategoria.innerHTML = '<option value="">No hay categorías disponibles</option>';
-//             attrsubcategoria.innerHTML = '<option value="">No hay subcategorías disponibles</option>';
-//             attrmodelo.innerHTML = '<option value="">No hay modelos disponibles</option>';
-//             console.log('No existen categorías');
-//         }
-//     } catch (error) {
-//         console.log('Error al listar categorías:', error);
-//         attrcategoria.innerHTML = '<option value="">Error al cargar categorías</option>';
-//         attrsubcategoria.innerHTML = '<option value="">Error al cargar subcategorías</option>';
-//         attrmodelo.innerHTML = '<option value="">Error al cargar modelos</option>';
-//     }
-// };
 const listarSubcategorias = async (id_categoria) => {
     try {
         const response = await fetch(`crearorden/subcategorias/${id_categoria}`);

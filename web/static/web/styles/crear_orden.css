@@ -1,0 +1,18 @@
+/* Contenedor para los accesorios */
+#attraccesorios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* Espacio entre los items */
+    justify-content: space-around;
+}
+
+/* Cada item de checkbox */
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    width: calc(33% - 20px); /* Ajusta este valor según el gap para lograr dos columnas */
+}
+
+.checkbox-item label {
+    margin-left: 5px; /* Espacio entre el checkbox y el label */
+}

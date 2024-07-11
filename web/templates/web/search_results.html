@@ -1,0 +1,85 @@
+  {% extends "web/base.html" %}
+        {% load static %}
+
+        {% block titulo %}Servicio Tecnico Cifra{% endblock %}  
+{% block extra_css %} 
+ <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'web/styles/dashboard.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'web/styles/index_styles.css' %}"
+    />
+{% endblock %}
+{% block main %} 
+ <div class="main p-0"> 
+ <h1>Resultados de busqueda</h1>
+
+      <section class="row orders-table">    
+        <h5>Listado de Ordenes</h5>
+
+        <div class="table-responsive px-3 container-fluid">
+
+          <table class="table table-hover table-sm" id="tabla-ordenes">
+                <thead>
+                    <tr>
+                      <th>Orden ID</th>
+                      <th>Fecha ingreso</th>
+                      <th>Cliente</th>
+                      <th>Categoría</th>
+                      <th>Subcategoría</th>
+                      <th>Modelo</th>
+                      <th>Serie</th>
+                      <th>Falla</th>
+                      <th>Estado</th>
+                  </thead>
+                  <tbody id="tabla-ordenes-body">
+                  {% for orden in object_list %}
+                    <tr>
+                      <td> <a href="{% url 'detalle_orden' orden.id %}">{{ orden.id }}</a></td>
+                      <td>{{ orden.fecha_ingreso|date:"d/m/Y" }}</td>
+                      <td>
+                        <a href="{% url 'detalle_cliente' orden.cliente.id %}">
+                          {{ orden.cliente.nombre }} {{ orden.cliente.apellido }}
+                          {% if orden.cliente.empresa %}
+                          <br>{{ orden.cliente.razon_social }}
+                          {% endif %}
+                        </a>
+                      </td>
+                      <td>{{ orden.maquina.categoria }}</td>
+                      <td>{{ orden.maquina.subcategoria }}</td>
+                      <td>{{ orden.maquina.modelo }}</td>
+                      <td>{{ orden.maquina.serie }}</td> 
+                      <td>{{ orden.maquina.falla }}</td>
+                      <td>
+                          {% if orden.estado == 'ingresada' %}
+                            <span class="badge ingresada">Ingresada</span>
+                          {% elif orden.estado == 'presupuestada' %}
+                            <span class="badge presupuestada">Presupuestada</span>
+                          {% elif orden.estado == 'aceptada' %}  
+                            <span class="badge aceptada">Aceptada</span>
+                          {% elif orden.estado == 'rechazada' %}  
+                            <span class="badge rechazada">Rechazada</span>
+                          {% elif orden.estado == 'reparada' %}  
+                            <span class="badge reparada">Reparada</span>
+                          {% elif orden.estado == 'entregada' %}  
+                            <span class="badge entregada">Entregada</span>
+                          {% endif %}  
+                      </td>
+                  
+                    {% endfor %}
+                  </tbody>
+          </table>
+
+        </div>
+
+      </section>
+
+      {% endblock %} 
+ 
+ 
+ 
+ 

@@ -7,19 +7,26 @@ a.btn.btn-ver {
   border: 1px solid var(--color-badge-aceptada);
 }
 
-a.btn.btn-editar {
-  --bs-btn-padding-y: 0.1rem;
-  --bs-btn-padding-x: 0.2rem;
-  --bs-btn-font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-badge-alta1-opacity70);
-  border: 1px solid var(--color-badge-alta);
+td a {
+  text-decoration: none;
 }
-.btn-eliminar{
-  --bs-btn-padding-y: 0.1rem;
-  --bs-btn-padding-x: 0.2rem;
-  --bs-btn-font-size: 0.75rem;
+
+.btn-editar, .btn-eliminar i {
   font-weight: 700;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+}
+
+.btn-editar {
+  color: var(--color-badge-alta1-opacity70);
+}
+
+.btn-eliminar {
+  border: none;  /* Elimina el borde del botón */
+  background: none;  /* Elimina el fondo del botón */
+  padding: 0;  /* Elimina el padding del botón */
+}
+
+.btn-eliminar i {
   color: var(--color-badge-rechazada-opacity50);
-  border: 1px solid var(--color-badge-rechazada-opacity50);
 }

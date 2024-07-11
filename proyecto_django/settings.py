@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'rest_framework',
     'web',
-    'email_service'
+
 ]
 
 MIDDLEWARE = [
