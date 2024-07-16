@@ -1,5 +1,15 @@
-{% extends "web/base.html" %} {% load static %} {% block titulo %}
-Maquinas{%endblock %} {% block main %}
+{% extends "web/base.html" %} 
+{% load static %}
+
+{% block titulo %}Maquinas{%endblock %} 
+
+{% block extra_css %}
+  <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+{% endblock %}
+
+
+{% block main %}
 <h1>Categorias de Maquinas</h1>
 <div class="container d-flex">
   <a href="/destructoras">
@@ -51,6 +61,14 @@ Maquinas{%endblock %} {% block main %}
       </div>
     </div>
   </a>
+  <form action="">
+    <div class="input-group mb-3">
+  <div class="input-group-text">
+    <input class="form-check-input mt-0" type="checkbox" value="" aria-label="Checkbox for following text input">
+  </div>
+  <input type="text" class="form-control"placeholder='razon solcia;' aria-label="Text input with checkbox">
+</div>
+  </form>
 </div>
 
 {% endblock %}

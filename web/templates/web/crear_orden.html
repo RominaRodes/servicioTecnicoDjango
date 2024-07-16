@@ -7,32 +7,77 @@
 {% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_orden.css' %}" />
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_orden.css' %}" />
 {% endblock %}
 
 {% block main %}
-    <div class="container">
-        <h1>Crear Orden de Reparación</h1>
+    <div class="container mt-5">
+        <h1 class="text-center py-3">Crear Orden de Reparación</h1>
         <form method="post">
             {% csrf_token %}
             <div class="row">
                 <div class="col-md-6">
                     <h3>Detalles de la Orden</h3>
-                    {{ orden_form.as_p }}
+                    <br>
+                    {% for field in orden_form %}
+                        {% if field.name == "cliente" %}
+                        <div class="form-floating mb-3">
+                            {{ field|add_class:"form-control" }}
+                            <label for="{{ field.id_for_label }}">Cliente</label>
+                        </div>
+                        {% else %}
+                        <div class="form-floating mb-3">
+                            {{ field|add_class:"form-control" }}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        </div>
+                        {% endif %}
+                        {{ field.errors }}
+                    {% endfor %}
                 </div>
+
                 <div class="col-md-6">
                     <h3>Detalles de la Máquina</h3>
-                    {{ maquina_form.as_p }}
+                    <br>
+                    {% for field in maquina_form %}
+                        {% if field.name == "garantia" %}
+                        <div class="form-check mb-3">
+                            {{ field|add_class:"form-check-input" }}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        </div>
+                        {% else %}
+                            {% if field.name == "accesorios" %}
+                            <div class="form-floating mb-3">
+                                {{ field|add_class:"form-control" }}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            </div>
+                            {% else %}
+                            <div class="form-floating mb-3">
+                                {{ field|add_class:"form-control" }}
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field.errors }}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
+
             <button type="submit" class="btn btn-primary">Crear Orden</button>
         </form>
     </div>
+{% endblock %}
 
-
+{% block extra_js %}
 <script src="{% static 'web/js/ajaxCrearOrden.js' %}"></script>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#id_cliente').select2({
+            placeholder: '------'
+        });
+
+        $('#id_accesorios').select2({
+             placeholder: '------'
+        });
+    });
+</script>
 {% endblock %}

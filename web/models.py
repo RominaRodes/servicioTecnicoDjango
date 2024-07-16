@@ -119,17 +119,20 @@ class CondicionIVA(models.Model):
 class Cliente(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre del cliente")
     apellido = models.CharField(max_length=100, verbose_name="Apellido del cliente")
-    empresa= models.BooleanField(default=False)
-    razon_social = models.CharField(max_length=100, verbose_name="Razon Social", null=True,  blank=True)
+    empresa = models.BooleanField(default=False)
+    razon_social = models.CharField(max_length=100, verbose_name="Razon Social", null=True, blank=True)
     condicion_iva = models.ForeignKey(CondicionIVA, on_delete=models.CASCADE, verbose_name="Condición IVA")
     domicilio = models.CharField(max_length=200, verbose_name="Domicilio")
-    localidad =models.CharField(max_length=45, verbose_name="Localidad")
+    localidad = models.CharField(max_length=45, verbose_name="Localidad")
     codigo_postal = models.CharField(max_length=6, verbose_name="Codigo Postal")
-    telefono =models.CharField(max_length=20, verbose_name="Telefono")
-    email =models.CharField(max_length=100, verbose_name="Email", unique=True)
+    telefono = models.CharField(max_length=20, verbose_name="Telefono")
+    telefono_alternativo = models.CharField(max_length=20, verbose_name="Telefono Alternativo", null=True, blank=True)
+    email = models.CharField(max_length=100, verbose_name="Email", unique=True)
+
     
     def __str__(self):
-        return  f"{self.pk} - {self.razon_social  or ''} {self.nombre} {self.apellido}"
+        return  f"{self.pk} - {self.razon_social or ''} {self.nombre} {self.apellido}"
+
 
 
 class OrdenDeReparacion(models.Model):

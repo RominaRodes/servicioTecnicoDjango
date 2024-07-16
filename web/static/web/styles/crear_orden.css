@@ -1,18 +1,101 @@
-/* Contenedor para los accesorios */
-#attraccesorios {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px; /* Espacio entre los items */
-    justify-content: space-around;
+/* Estilo general para el contenedor Select2 */
+/* .select2-container--default .select2-selection--single {
+    height: calc(3.5rem + 2px);
+    padding: 1.25rem 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    position: relative;
+} */
+
+/* Estilo del placeholder */
+/* .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0rem;
+    font-size: 1rem;
+    color: black;
+    position: absolute;
+    top: 1.75rem;
+    left: 0.75rem;
+    transition: all 0.2s ease-in-out;
+} */
+
+/* Estilo de la opción seleccionada */
+/*.select2-container--default .select2-selection--single .select2-selection__rendered--selected {*/
+    /* font-size: 1.25rem;
+   /* color: #495057;*/
+   /* position: absolute;
+    top: 1.75rem;
+    left: 0.75rem;
+} */
+
+/* Flecha del dropdown centrada verticalmente */
+/* .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(3.5rem + 2px);
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+} */
+/* 
+.select2-container--open .select2-selection--single .select2-selection__arrow {
+    top: 50%;
+    transform: translateY(-50%);
+} */
+/*----------------------------*/
+/* Estilo general para el contenedor Select2 */
+.select2-container--default .select2-selection--single {
+    height: calc(3.5rem + 2px);
+    padding: 1.25rem 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    position: relative;
 }
 
-/* Cada item de checkbox */
-.checkbox-item {
-    display: flex;
-    align-items: center;
-    width: calc(33% - 20px); /* Ajusta este valor según el gap para lograr dos columnas */
+/* Estilo del placeholder */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5;
+    padding-left: 0.75rem;
+    font-size: 1rem;
+   /* color: #6c757d;*/
+    position: absolute;
+    top: 1.5rem;
+    left: 0rem;
+    transition: all 0.2s ease-in-out;
 }
 
-.checkbox-item label {
-    margin-left: 5px; /* Espacio entre el checkbox y el label */
+/* Estilo de la opción seleccionada */
+.select2-container--default .select2-selection--single .select2-selection__rendered--selected {
+    font-size: 1rem;
+    /*color: #495057;*/
+    position: absolute;
+    top: 1.25rem;
+    left: 0.75rem;
 }
+
+/* Flecha del dropdown centrada verticalmente */
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: calc(3.5rem + 2px);
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.select2-container--open .select2-selection--single .select2-selection__arrow {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+
