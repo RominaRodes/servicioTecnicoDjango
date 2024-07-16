@@ -169,6 +169,10 @@ i.fas.fa-user {
 }
 /* Responsive */
 
+#main-section-container > header > nav{
+    background-color: #0e223e;
+}
+
 @media (min-width:768px) {
     .content {
         width: auto;

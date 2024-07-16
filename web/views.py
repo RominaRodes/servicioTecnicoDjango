@@ -230,24 +230,20 @@ def editar_cliente(request, pk):
     total_fields = len(form.fields)
     half = math.ceil(total_fields / 2)
 
-    return render(request, 'web/editar_cliente.html', {'form': form, 'half': half})
+    return render(request, 'web/editar_cliente.html', {'form': form, 'half': half, 'cliente_id': cliente.id })
+
+def cliente_eliminado(request):
+    clientes= Cliente.objects.all()
+    messages.success(request, 'El cliente fue eliminado con éxito')
+    return render(request, 'web/lista_clientes.html', {'clientes': clientes})
 
 class ClienteDeleteView(DeleteView):
     model: Cliente
-    #template_name = 'cliente_confirm_delete.html'
-    success_url = reverse_lazy('lista_clientes')
+    success_url = reverse_lazy('cliente_eliminado')
     def get_object(self):
         id_ = self.kwargs.get("pk")
         return get_object_or_404(Cliente, id=id_)
 
-# def eliminar_cliente(request, pk):
-#     cliente = get_object_or_404(Cliente, pk=pk)
-#     if request.method == 'POST':
-#         cliente.delete()
-#         messages.success(request, "El cliente fue eliminado con éxito")
-#         return redirect('lista_clientes')
-    
-#     return render(request, 'web/eliminar_cliente.html', {'cliente': cliente})
 
 def crear_orden(request):
     if request.method == 'POST':

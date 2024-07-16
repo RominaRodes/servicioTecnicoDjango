@@ -12,48 +12,55 @@
 {% endblock %}
 
 {% block main %}
-<div class="container">
-  <h1>Crear Cliente</h1>
+<div class="container mt-5">
+  <h1 class="py-4">Crear Cliente</h1>
   <form method="post">
     {% csrf_token %}
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-6 d-flex flex-column">
+        <div class="input-group mb-3">
+          <div class="input-group-text">
+            {{ form.empresa|add_class:"form-check-input mt-0" }}
+          </div>
+          <div class="form-floating flex-grow-1">
+            {{ form.razon_social|add_class:"form-control" }}
+            <label for="{{ form.razon_social.id_for_label }}">Razón Social</label>
+          </div>
+        </div>
+        {{ form.empresa.errors }}
+        {{ form.razon_social.errors }}
+        
         {% for field in form %}
-          {% if forloop.counter0 < half %}
-            <div class="form-group">
-              {{ field.label_tag }}
-              {% if field.name == "empresa" %}
-                <div class="form-check">
-                  {{ field|add_class:"form-check-input" }}
-                  {{ field.errors }}
-                </div>
+          {% if forloop.counter0 < half and field.name != "empresa" and field.name != "razon_social" %}
+            <div class="form-floating mb-3">
+              {% if field.name == "condicion_iva" %}
+                {{ field|add_class:"form-select" }}
               {% else %}
                 {{ field|add_class:"form-control" }}
-                {{ field.errors }}
               {% endif %}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field.errors }}
             </div>
           {% endif %}
         {% endfor %}
       </div>
-      <div class="col-md-6">
+      <div class="col-md-6 d-flex flex-column">
         {% for field in form %}
-          {% if forloop.counter0 >= half %}
-            <div class="form-group">
-              {{ field.label_tag }}
-              {% if field.name == "empresa" %}
-                <div class="form-check">
-                  {{ field|add_class:"form-check-input " }}
-                  {{ field.errors }}
-                </div>
+          {% if forloop.counter0 >= half and field.name != "empresa" and field.name != "razon_social" %}
+            <div class="form-floating mb-3">
+              {% if field.name == "condicion_iva" %}
+                {{ field|add_class:"form-select" }}
               {% else %}
                 {{ field|add_class:"form-control" }}
-                {{ field.errors }}
               {% endif %}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field.errors }}
             </div>
           {% endif %}
         {% endfor %}
       </div>
     </div>
+
     <button type="submit" class="btn btn-primary">Guardar</button>
   </form>
 </div>

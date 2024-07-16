@@ -12,12 +12,13 @@ Confirmar eliminar
 {% endblock %}
 
 {% block main %}
-<div class="container p-5">
+<div class="container p-5 mt-5 rounded bg-secondary-subtle " >
     <form method="post">{% csrf_token %}
     <h2>Desea Eliminar a "{{ object }}"?</h2>
     {{ form }}
-    <input type="submit" value="Confirm" class="btn btn-outline-danger">
-    <a href="{% url 'lista_clientes' %}" class="btn btn-outline-success">Cancelar</a>
+    <br>
+    <input type="submit" value="Confirmar" class="btn btn-danger">
+    <a href="{% url 'lista_clientes' %}" class="btn btn-success">Cancelar</a>
 </form>
 </div>
 

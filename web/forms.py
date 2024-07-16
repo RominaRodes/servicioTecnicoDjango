@@ -5,13 +5,23 @@ from django.core.exceptions import ValidationError
 
 
 
-
 class ClienteForm(forms.ModelForm):
     class Meta:
         model = Cliente
-        fields = ['nombre', 'apellido', 'empresa', 'razon_social', 'condicion_iva', 'domicilio', 'localidad', 'codigo_postal', 'telefono', 'email']
+        fields = ['empresa', 'razon_social', 'nombre', 'apellido', 'condicion_iva', 'email','domicilio', 'localidad', 'codigo_postal', 'telefono','telefono_alternativo',]
         widgets = {
-            'empresa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'empresa': forms.CheckboxInput(attrs={'class': 'form-check-input mt-3', 'style': 'margin: auto; position: relative;'}),
+            'razon_social': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Razón Social'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'}),
+            'apellido': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellido'}),
+            'condicion_iva': forms.Select(attrs={'class': 'form-select', 'placeholder': 'Condición IVA'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+            'domicilio': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Domicilio'}),
+            'localidad': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Localidad'}),
+            'codigo_postal': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código Postal'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono'}),
+            'telefono_alternativo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono Alternativo'}),
+            
         }
 
 
@@ -29,16 +39,25 @@ class DetalleClienteForm(forms.ModelForm):
 class MaquinaForm(forms.ModelForm):
     class Meta:
         model = Maquina
-        fields = ['categoria', 'subcategoria', 'modelo', 'serie', 'falla', 'garantia', 'accesorios']
+        fields = ['garantia', 'categoria', 'subcategoria', 'modelo', 'serie', 'falla', 'accesorios']
         widgets = {
+            'garantia': forms.CheckboxInput(),
             'categoria': forms.Select(attrs={'id': 'attrcategoria', 'class': 'form-select'}),
             'subcategoria': forms.Select(attrs={'id': 'attrsubcategoria', 'class': 'form-select'}),
             'modelo': forms.Select(attrs={'id': 'attrmodelo', 'class': 'form-select'}),
             'serie': forms.TextInput(attrs={'class': 'form-control'}),
             'falla': forms.Select(attrs={'class': 'form-select'}),
-            'garantia': forms.CheckboxInput(attrs={'class': 'form-check'}),
-            'accesorios': forms.CheckboxSelectMultiple(attrs={'id': 'attraccesorios', 'class': 'form-check p-0'}),
+            
+            
         }
+
+        empty_labels = {
+            'categoria': '------',
+            'subcategoria': '------',
+            'modelo': '------',
+            'accesorios':  '------',
+        }
+
 
 
 class OrdenDeReparacionForm(forms.ModelForm):
@@ -46,9 +65,12 @@ class OrdenDeReparacionForm(forms.ModelForm):
         model = OrdenDeReparacion
         fields = ['cliente', 'notas']
         widgets = {
-            'cliente': forms.Select(attrs={'class': 'form-select'}),
-            'notas': forms.Textarea(attrs={'class': 'form-control'})
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 250px", 'placeholder': 'Notas'})
         }
+        empty_labels = {
+            'cliente': '------',
+        }
+
 
 class PresupuestoForm(forms.ModelForm):
     class Meta:
