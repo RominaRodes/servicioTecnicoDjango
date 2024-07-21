@@ -160,7 +160,7 @@ a.sidebar-link {
     width: 100vw;
 }
 nav a {
-  color: var(--color-badge-entregada);
+    color: var(--color-badge-entregada);
 }
 
 
@@ -172,6 +172,20 @@ i.fas.fa-user {
 #main-section-container > header > nav{
     background-color: #0e223e;
 }
+
+
+/*--------BOTONES---------------*/
+.btn-formulario{
+    background: rgb(0,196,233);
+    color:white;
+}
+
+.btn-formulario:hover{
+    background:white;
+    color: var(--color-switch-base);
+    border: 1px solid  var(--color-switch-base);
+}
+
 
 @media (min-width:768px) {
     .content {

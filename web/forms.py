@@ -65,7 +65,7 @@ class OrdenDeReparacionForm(forms.ModelForm):
         model = OrdenDeReparacion
         fields = ['cliente', 'notas']
         widgets = {
-            'notas': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 250px", 'placeholder': 'Notas'})
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 435px", 'placeholder': 'Notas'})
         }
         empty_labels = {
             'cliente': '------',

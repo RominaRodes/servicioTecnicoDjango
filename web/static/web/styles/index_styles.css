@@ -34,7 +34,6 @@ li {
   margin-left: 70px;
   /* Mueve el contenedor principal hacia la derecha */
   transition: margin-left 0.25s ease-in-out;
-
   background: rgb(245, 245, 245);
 }
 
@@ -64,7 +63,8 @@ li {
   align-items: center;
   width: 45%;
   background: white;
-  border-left: 3px solid var(--color-badge-alta1-opacity70);
+  /*border-left: 3px solid var(--color-badge-alta1-opacity70);*/
+  border-left: 3px solid rgb(0,196,233);
   border-radius: 10px;
   padding: 20px;
   margin: 5px;
@@ -72,7 +72,8 @@ li {
 
 .card-number {
   font-size: 2rem;
-  color: var(--color-badge-alta1-opacity70);
+  /*color: var(--color-badge-alta1-opacity70);*/
+  color:rgb(0,196,233);
   font-weight: 500;
 }
 
@@ -94,13 +95,21 @@ a.nav-link.active{
     color: black;
     font-weight: 800;
 }
-
+/*-------------TABLE section--------*/
+#main-section-container > div > section.row.orders-table.p-5 > ul > li > a:hover{
+color: rgb(0,196,233);
+}
+/*
 #tabla-ordenes td a i {
   color: var(--bs-gray-700);
   font-weight: 500;
 }
-
+*/
 #tabla-ordenes th {
   background-color:  #2a4a77;
   color:white;
+}
+
+#tabla-ordenes > tbody > tr > td > a {
+  color:rgb(0,196,233);
 }

@@ -36,9 +36,12 @@
   --color-badge-reparada: rgb(253, 153, 1);
   --color-badge-reparada: rgb(179, 127, 248);
   --color-badge-entregada: rgb(164, 176, 189);
-
+/*
   --color-badge-alta1-opacity30: rgba(45, 133, 238, 0.3);
   --color-badge-alta1-opacity70: rgba(45, 133, 238, 0.6);
+*/
+  --color-badge-alta1-opacity30: rgba(0,196,233, 0.3);
+  --color-badge-alta1-opacity70: rgba(0,196,233, 0.6);
 
   --color-badge-presupuestada-opacity50: rgba(255, 97, 191, 0.5);
 
