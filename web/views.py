@@ -42,9 +42,9 @@ logger = logging.getLogger(__name__)
 def index(request):
     estado = request.GET.get('estado', '')
     if estado:
-        ordenes = OrdenDeReparacion.objects.filter(estado=estado)
+        ordenes = OrdenDeReparacion.objects.filter(estado=estado).order_by('-fecha_ingreso')
     else:
-        ordenes = OrdenDeReparacion.objects.all()
+        ordenes = OrdenDeReparacion.objects.all().order_by('-fecha_ingreso')
     
     ordenes_info = []
     for orden in ordenes:
@@ -86,7 +86,7 @@ def index(request):
     return render(request, 'web/index.html', context)
 
 def get_todas_las_ordenes(request):
-    ordenes_qs = OrdenDeReparacion.objects.all()
+    ordenes_qs = OrdenDeReparacion.objects.all().order_by('-fecha_ingreso')
     ordenes_info = []
 
     for orden in ordenes_qs:
@@ -129,7 +129,7 @@ def get_todas_las_ordenes(request):
     return JsonResponse(data, safe=False)
 
 def get_ordenes_por_estado(request, estado):
-    ordenes_qs = OrdenDeReparacion.objects.filter(estado=estado)
+    ordenes_qs = OrdenDeReparacion.objects.filter(estado=estado).order_by('-fecha_ingreso')
     ordenes_info = []
 
     for orden in ordenes_qs:
@@ -269,9 +269,9 @@ def crear_orden(request):
 def lista_ordenes(request):
     estado = request.GET.get('estado', '')
     if estado:
-        ordenes = OrdenDeReparacion.objects.filter(estado=estado)
+        ordenes = OrdenDeReparacion.objects.filter(estado=estado).order_by('-fecha_ingreso')
     else:
-        ordenes = OrdenDeReparacion.objects.all()
+        ordenes = OrdenDeReparacion.objects.all().order_by('-fecha_ingreso')
     
     ordenes_info = []
     for orden in ordenes:

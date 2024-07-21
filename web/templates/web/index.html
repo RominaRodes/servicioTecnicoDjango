@@ -173,15 +173,15 @@
                         {% if orden_info.ultimo_estado == 'ingresada' %}
                           <a href="{% url 'presupuestar_orden' orden_info.orden.id %}"><button class="btn btn-tbl presupuestar">Presupuestar</button></a>
                         {% elif orden_info.ultimo_estado == 'presupuestada' %}
-                          <a href="{% url 'aceptar_presupuesto' orden_info.presupuesto_uuid %}"><button class="btn btn-tbl aceptada">Aceptar Presupuesto</button></a>
-                          <a href="{% url 'rechazar_presupuesto' orden_info.presupuesto_uuid  %}"><button class="btn btn-tbl rechazada">Rechazar Presupuesto</button></a>
+                          <a href="{% url 'aceptar_presupuesto' orden_info.presupuesto_uuid %}"><i class="fa-solid fa-circle-check aceptada"></i></a>
+                          <a href="{% url 'rechazar_presupuesto' orden_info.presupuesto_uuid  %}"><i class="fa-regular fa-circle-xmark rechazada"></i></a>
                         {% elif orden_info.ultimo_estado == 'aceptada' %}
                           <a href="{% url 'reparar_orden' orden_info.orden.id %}"><button class="btn btn-tbl reparada">Reparar</button></a>
                         {% elif orden_info.ultimo_estado == 'reparada' or orden_info.ultimo_estado == 'rechazada' %}
                           <a href="{% url 'entregar_orden' orden_info.orden.id %}"><button class="btn btn-tbl entregada">Para entregar</button></a>
                         {% endif %}
                       </td>
-                      <td>{%if orden_info.ultimo_estado != 'ingresada'%} <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id %}"><i class="fa-solid fa-pen-to-square"></i></a>{% endif %}</td>
+                      <td>{%if orden_info.ultimo_estado != 'ingresada'%} <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id %}"><i class="fa-solid fa-pen-to-square presupuesto"></i></a>{% endif %}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
