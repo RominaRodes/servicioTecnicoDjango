@@ -29,7 +29,7 @@ Listado de Clientes
     <tbody>
       {% for cliente in clientes %}
       <tr>
-        <td class="fs-5 fw-semibold"><a href="{% url 'detalle_cliente' cliente.id %}">{{ cliente.id }}</a></td>
+        <td><a href="{% url 'detalle_cliente' cliente.id %}">{{ cliente.id }}</a></td>
         <td>{% if cliente.empresa %}{{ cliente.razon_social }}{% else %}---{% endif %}</td>
         <td>{{ cliente.nombre }} {{ cliente.apellido }}</td>
         <td>{{ cliente.condicion_iva }}</td>

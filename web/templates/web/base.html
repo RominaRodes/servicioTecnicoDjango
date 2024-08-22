@@ -56,7 +56,7 @@
               <ul class="messages m-0 ">
                 {% for message in messages %}
                 <div class="alert alert-light alert-dismissible fade show" role="alert">
-                {{ message }}
+                {{ message|safe }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
               </div>
               {% endfor %}

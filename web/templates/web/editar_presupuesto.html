@@ -1,20 +1,51 @@
 {% extends "web/base.html" %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block titulo %}
 Editar Presupuesto
 {% endblock %}
 
 {% block extra_css %}
-
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_presupuesto.css' %}" />
 {% endblock %}
 
 {% block main %}
-  <h2>Editar Presupuesto</h2>
+<div class="container mt-5">
+    <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
+    <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
+    {% if orden.cliente.empresa %}
+      {{ orden.cliente.razon_social }}<br>
+    {% else %}
+      {{ orden.cliente.nombre }} {{ orden.cliente.apellido }}
+    {% endif %}
+  </a></h5>
+  <h5>Maquina: {{orden.maquina}}</h5>
   <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Guardar cambios</button>
+    <div class="row">
+       <div class="col-md-12">
+        {% for field in form %}
+          <div class="form-floating mb-3">
+              {{ field|add_class:"form-control" }}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field.errors }}
+          </div>
+            
+        {% endfor %}
+      </div>
+    </div>  
+    <button type="submit" class="btn btn-formulario">GUARDAR</button>
+    <a href="{% url 'detalle_presupuesto' object.pk %}" class="btn btn-formulario">Cancelar</a>
   </form>
-  <a href="{% url 'detalle_presupuesto' object.pk %}">Cancelar</a>
+</div>
+
+
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 {% endblock %}
+ 

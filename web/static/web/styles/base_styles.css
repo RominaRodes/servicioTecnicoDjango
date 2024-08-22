@@ -1,3 +1,11 @@
+/*--------------custom bootstrap styles-----------------*/
+.nav{
+    --bs-nav-link-hover-color:  rgb(0,196,233);
+    --bs-nav-tabs-link-hover-border-color:  rgb(0,196,233);
+}
+
+
+
 #sidebar-wrapper {
     position: fixed;
     /* Fija el aside en su posición */

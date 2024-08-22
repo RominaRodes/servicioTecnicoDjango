@@ -9,6 +9,8 @@ urlpatterns = [
     path('search/', SearchResultsView.as_view(), name='search_results'),
     path('get_ordenes_por_estado/<str:estado>', views.get_ordenes_por_estado, name='get_ordenes_por_estado'),
     path('get_todas_las_ordenes', views.get_todas_las_ordenes, name='get_todas_las_ordenes'),
+    path('login', views.login_user, name='login'),
+    path('logout', views.logout_user, name='logout'),
 
 
     path('clientes/', views.lista_clientes, name='lista_clientes'),
@@ -30,11 +32,14 @@ urlpatterns = [
     path('presupuestar/<int:orden_id>/', views.presupuestar_orden, name='presupuestar_orden'),
     path('presupuesto/<int:pk>/', PresupuestoDetailView.as_view(), name='detalle_presupuesto'),
     path('presupuesto/editar/<int:pk>/', EditarPresupuestoView.as_view(), name='editar_presupuesto'),
-    path('aceptar-presupuesto/<uuid:uuid>', views.aceptar_presupuesto, name='aceptar_presupuesto'),
-    path('rechazar-presupuesto/<uuid:uuid>', views.rechazar_presupuesto, name='rechazar_presupuesto'),
+    path('rechazar-presupuesto/<uuid>/', views.rechazar_presupuesto_por_mail, name='rechazar_presupuesto_por_mail'),
+    path('confirmar-rechazar-presupuesto/<uuid>/', views.confirmar_rechazar_presupuesto, name='confirmar_rechazar_presupuesto'),
+    path('aceptar-presupuesto/<uuid>/', views.aceptar_presupuesto_por_mail, name='aceptar_presupuesto_por_mail'),
+    path('confirmar-aceptar-presupuesto/<uuid>/', views.confirmar_aceptar_presupuesto, name='confirmar_aceptar_presupuesto'),
     path('reparar/<int:orden_id>/', views.reparar_orden, name='reparar_orden'),
     path('entregar/<int:orden_id>/', views.entregar_orden, name='entregar_orden'),
 
+    path('mandar_mail_orden/<int:id_orden>', views.mandar_mail_comprobante_entrega, name='mandar_mail_orden'),
     path('mandar_mail_presupuesto/<int:id_presupuesto>', views.mandar_mail, name='mandar_mail_presupuesto'),
 
 

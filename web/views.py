@@ -16,6 +16,7 @@ import io
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from .pdfs import generar_template_presupuesto
+from .pdfs import generar_template_comprobante
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from datetime import timedelta
@@ -35,9 +36,31 @@ from django.conf import settings
 from email.mime.image import MIMEImage
 from django.db.models import Q
 from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.utils.safestring import mark_safe
 
 logger = logging.getLogger(__name__)
+
+def login_user(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Hola {user}')
+            return redirect('index')
+        else: 
+            messages.error(request, 'Credenciales incorrectas. Intente nuevamente')
+            return render(request, 'web/users/login.html', {}) 
+    else: 
+        return render(request, 'web/users/login.html', {})        
+
+def logout_user(request): 
+    logout(request)
+    messages.success(request, "Se cerró la sesión correctamente")
+    return redirect('login')
 
 def index(request):
     estado = request.GET.get('estado', '')
@@ -82,7 +105,7 @@ def index(request):
         'total_entregadas': OrdenDeReparacion.objects.filter(estado='entregada').count(),
         'page_obj': page_obj,
     }
-    messages.success(request, 'este es un mensaje de success')
+  
     return render(request, 'web/index.html', context)
 
 def get_todas_las_ordenes(request):
@@ -303,8 +326,6 @@ def lista_ordenes(request):
     }
     return render(request, 'web/lista_ordenes.html', context)
 
-
-
 def presupuestar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, pk=orden_id)
     
@@ -316,31 +337,48 @@ def presupuestar_orden(request, orden_id):
             presupuesto.save()
             orden.estado = 'presupuestada'
             orden.save()
-            
+        messages.success(request, 'El presupuesto fue creado con exito')   
         return redirect(reverse('detalle_presupuesto', args=[presupuesto.id]))
     else:
         form = PresupuestoForm()
     
-    total_fields = len(form.fields)
-    half = math.ceil(total_fields / 2)
-    return render(request, 'web/crear_presupuesto.html', {'form': form, 'half': half, 'orden': orden})
+    return render(request, 'web/crear_presupuesto.html', {'form': form, 'orden': orden})
 
-def aceptar_presupuesto(request, uuid):
+def aceptar_presupuesto_por_mail(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     if timezone.now() > presupuesto.fecha_creacion + timedelta(days=30):
         return HttpResponseBadRequest("El enlace ha caducado.")
     presupuesto.aprobar()
     presupuesto.orden.estado = 'aceptada'
     presupuesto.orden.save()
+    messages.success(request, 'El presupuesto fue aceptado con éxito')
     return redirect('listado_ordenes')
 
-def rechazar_presupuesto(request, uuid):
+def rechazar_presupuesto_por_mail(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     if timezone.now() > presupuesto.fecha_creacion + timedelta(days=30):
         return HttpResponseBadRequest("El enlace ha caducado.")
     presupuesto.rechazar()
     presupuesto.orden.estado = 'rechazada'
     presupuesto.orden.save()
+    messages.success(request, 'El presupuesto fue rechazado con éxito')
+    return redirect('listado_ordenes')
+
+def confirmar_aceptar_presupuesto(request, uuid):
+    presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
+    aceptar_url = reverse('aceptar_presupuesto_por_mail', args=[uuid])
+    aceptar_button_html = f'<a href="{aceptar_url}" class="btn btn-primary">Aceptar</a>'
+    mensaje = mark_safe(f'¿Está seguro que desea aceptar el presupuesto de la orden n.º {presupuesto.orden}?   {aceptar_button_html}')
+
+    messages.success(request, mensaje)
+    return redirect('listado_ordenes')
+
+def confirmar_rechazar_presupuesto(request, uuid):
+    presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
+    rechazar_url = reverse('rechazar_presupuesto_por_mail', args=[uuid])
+    rechazar_button_html = f'<a href="{rechazar_url}" class="btn btn-danger">Rechazar</a>'
+    mensaje = mark_safe(f'¿Está seguro que desea rechazar el presupuesto de la orden n.º {presupuesto.orden}?   {rechazar_button_html}')
+    messages.success(request, mensaje)
     return redirect('listado_ordenes')
 
 def reparar_orden(request, orden_id):
@@ -359,7 +397,13 @@ class EditarPresupuestoView(UpdateView):
     model = Presupuesto
     form_class = PresupuestoForm
     template_name = 'web/editar_presupuesto.html'
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        orden = self.object.orden
+        context['orden'] = orden
+        return context 
+        
     def get_success_url(self):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
 
@@ -372,7 +416,14 @@ class OrdenDeReparacionDetailView(DetailView):
         context['historial'] = HistorialEstado.objects.filter(orden=self.object).order_by('-fecha_cambio')
         context['ultimo_historial_estado'] = context['historial'].filter(estado=self.object.estado).first()
         context['estados'] = ["ingresada", "presupuestada", "aceptada", "rechazada", "reparada", "entregada"]
+        presupuesto = Presupuesto.objects.filter(orden=self.object).first()
+        context['presupuesto'] = presupuesto
+        if presupuesto:
+            context['presupuesto'] = presupuesto
+        else:
+            context['presupuesto'] = None
         return context
+
 
 class PresupuestoDetailView(DetailView):
     model = Presupuesto
@@ -471,8 +522,8 @@ def mandar_mail(request,id_presupuesto):
 
     try:
         uuid = presupuesto.uuid
-        aceptar_url = request.build_absolute_uri(reverse('aceptar_presupuesto', kwargs={'uuid': uuid}))
-        rechazar_url = request.build_absolute_uri(reverse('rechazar_presupuesto', kwargs={'uuid': uuid}))
+        aceptar_url = request.build_absolute_uri(reverse('aceptar_presupuesto_por_mail', kwargs={'uuid': uuid}))
+        rechazar_url = request.build_absolute_uri(reverse('rechazar_presupuesto_por_mail', kwargs={'uuid': uuid}))
         if orden.cliente.empresa:
             cliente =  f'{orden.cliente.nombre} {orden.cliente.apellido}-{orden.cliente.razon_social}'
         else:
@@ -529,3 +580,96 @@ def mandar_mail(request,id_presupuesto):
     except Exception as e:
         logger.error(f'Error al enviar correo electrónico: {str(e)}')
         return Response({"message": f'Error al enviar correo electrónico: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+@api_view(['GET'])
+def mandar_mail_comprobante_entrega(request,id_orden):
+    orden = get_object_or_404(OrdenDeReparacion, pk=id_orden)
+    accesorios = orden.maquina.accesorios.all()
+    accesorios_list = list(accesorios[:4])  # Limitar a 4 accesorios
+    accesorios_dict = {
+        'equipo_accesorio1': accesorios_list[0] if len(accesorios_list) > 0 else 'No posee accesorios',
+        'equipo_accesorio2': accesorios_list[1] if len(accesorios_list) > 1 else '',
+        'equipo_accesorio3': accesorios_list[2] if len(accesorios_list) > 2 else '',
+        'equipo_accesorio4': accesorios_list[3] if len(accesorios_list) > 3 else ''
+    }
+
+    datos = {
+        'cliente_nombre': f'{orden.cliente.nombre} {orden.cliente.apellido}',
+        'cliente_telefono': orden.cliente.telefono,
+        'cliente_email': orden.cliente.email,
+        'orden_numero': orden.id,
+        'ingreso_fecha': orden.fecha_ingreso.strftime('%Y-%m-%d'),
+        'equipo_categoria': orden.maquina.categoria,
+        'equipo_subcategoria': orden.maquina.subcategoria,
+        'equipo_modelo': orden.maquina.modelo,
+        'equipo_numero_serie': orden.maquina.serie,
+        'equipo_garantia': 'Posee' if orden.maquina.garantia else 'No posee',
+        'equipo_falla': orden.maquina.falla,
+        'equipo_notas': orden.notas,
+        'equipo_insumos': 'Ninguno',  # Agregar este dato para que se incluya
+        **accesorios_dict
+    }
+
+    # Generar el PDF en memoria
+    pdf_buffer = BytesIO()
+    generar_template_comprobante(pdf_buffer, datos)
+    pdf_buffer.seek(0)  # Volver al principio del archivo para poder leerlo
+
+    try:
+        if orden.cliente.empresa:
+            cliente =  f'{orden.cliente.nombre} {orden.cliente.apellido}-{orden.cliente.razon_social}'
+        else:
+            cliente = f'{orden.cliente.nombre} {orden.cliente.apellido}'
+        
+        subject= 'Comprobante de entrega - Orden de Reparacion'
+        to_mail = orden.cliente.email
+        context ={
+            'cliente': cliente,
+            'orden_id': orden.id,
+            'logo_cid': 'logo_image',
+            'imagen_cid': 'example_image'
+        }
+
+        html_message = render_to_string('web/emails/comprobante-email.html', context)
+        plain_message= strip_tags(html_message)
+
+        message = EmailMultiAlternatives(
+            subject=subject,
+            body= plain_message,
+            from_email=None,
+            to=[to_mail],
+        )
+        message.attach_alternative(html_message, "text/html")
+
+        # crea el nombre del pdf y luego lo adjunta
+        if orden.cliente.empresa:
+            nombre_pdf = f'{orden.cliente.razon_social.upper()}_ordenReparacion.pdf'
+        else:
+            nombre_pdf = f'{orden.cliente.nombre.upper()}_{orden.cliente.apellido.upper()}_ordenReparacion.pdf'
+
+        message.attach(nombre_pdf, pdf_buffer.getvalue(), 'application/pdf')
+
+        # Adjuntar imágen logo e imagen cuerpo mial  y agrega Content-ID
+        logo_path = settings.STATICFILES_DIRS[0] / 'web/img/LogoUnitronic.png'
+        imagen_path = settings.STATICFILES_DIRS[0] / 'web/img/65bc9a46-7405-44fd-8dc1-c779fe5b831d.png'
+
+
+        with open(logo_path, 'rb') as logo_file:
+            logo = MIMEImage(logo_file.read())
+            logo.add_header('Content-ID', '<logo_image>')
+            message.attach(logo)
+
+        with open(imagen_path, 'rb') as imagen_file:
+            imagen = MIMEImage(imagen_file.read())
+            imagen.add_header('Content-ID', '<example_image>')
+            message.attach(imagen)
+
+        message.send()
+        messages.success(request, f'El email de la orden se reparacion numero {orden.id} fue enviado con éxito')
+        return redirect('index')  
+
+    except Exception as e:
+        logger.error(f'Error al enviar correo electrónico: {str(e)}')
+        return Response({"message": f'Error al enviar correo electrónico: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+    

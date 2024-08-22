@@ -17,7 +17,7 @@ span.badge.rechazada {
 }
 
 span.badge.reparada {
-  background: var(--color-badge-reparada-opacity50);
+    background: var(--color-badge-reparada-opacity50); 
 }
 
 span.badge.entregada {
@@ -48,8 +48,8 @@ table > tbody > tr > td > a > i.rechazada{
 }
 
 button.btn.reparada {
-  color: var(--color-badge-reparada);
-  border: 1px solid var(--color-badge-reparada);
+  color: var(--color-badge-reparada-opacity50);
+  border: 1px solid var(--color-badge-reparada-opacity50);
 }
 
 button.btn.entregada {
@@ -58,6 +58,10 @@ button.btn.entregada {
 }
 /*---------icono presupuesto tabla---------------*/
 #tabla-ordenes > tbody > tr > td> a > i.presupuesto{
+  color:  var(--color-badge-alta1-opacity70);
+  font-size: 1.2rem;
+}
+#main-section-container > div > div > table > tbody > tr > td > a{
   color:  var(--color-badge-alta1-opacity70);
   font-size: 1.2rem;
 }

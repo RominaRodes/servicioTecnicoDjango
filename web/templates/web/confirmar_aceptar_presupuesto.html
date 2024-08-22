@@ -1,0 +1,8 @@
+
+  <h1>Confirmar aceptación de presupuesto</h1>
+  <p>¿Está seguro de que desea aceptar el presupuesto?</p>
+  <p>Esta acción es irreversible.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Aceptar</button>
+  </form>

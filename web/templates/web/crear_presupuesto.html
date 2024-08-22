@@ -7,14 +7,14 @@
 {% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}" />
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_presupuesto.css' %}" />
 {% endblock %}
 
 {% block main %}
-<div class="container">
-  <h1>Presupuesto para orden nro.{{ orden.id }}</h1>
-  <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
+    <div class="container mt-5">
+    <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
+    <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
     {% if orden.cliente.empresa %}
       {{ orden.cliente.razon_social }}<br>
     {% else %}
@@ -24,21 +24,19 @@
   <h5>Maquina: {{orden.maquina}}</h5>
   <form method="post">
     {% csrf_token %}
-    
-    <div class="col-md-6">
-        <h4>Detalles</h4>
-        <div class="form-group">
-          {{ form.descripcion.label_tag }}
-          {{ form.descripcion|add_class:"form-control" }}
-        </div>
-        <div class="form-group">
-          {{ form.total.label_tag }}
-          {{ form.total|add_class:"form-control" }} 
-        </div>
-        <button type="submit" class="btn btn-primary">Crear Presupuesto</button>
+    <div class="row">
+       <div class="col-md-12">
+        {% for field in form %}
+          <div class="form-floating mb-3">
+              {{ field|add_class:"form-control" }}
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field.errors }}
+          </div>
+            
+        {% endfor %}
       </div>
-    </div>
-   
+    </div>  
+    <button type="submit" class="btn btn-formulario">Crear Presupuesto</button>
   </form>
 </div>
 

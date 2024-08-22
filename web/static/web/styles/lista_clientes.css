@@ -9,6 +9,7 @@ a.btn.btn-ver {
 
 td a {
   text-decoration: none;
+  color: rgb(0,196,233);
 }
 
 .btn-editar, .btn-eliminar i {

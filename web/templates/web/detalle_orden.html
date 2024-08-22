@@ -7,6 +7,7 @@ Detalle de la Orden de Reparación
 
 {% block extra_css %}
 <link rel="stylesheet" type="text/css" href="{% static 'web/styles/detalle_orden.css' %}" />
+
 {% endblock %}
 
 {% block main %}
@@ -16,8 +17,8 @@ Detalle de la Orden de Reparación
             <div>
                 <h5>Cliente</h5>
                 {% if object.cliente.empresa %} 
-                <h4>{{ object.cliente.razon_social }}</h4>
-                <h4>Contacto: >{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
+                <h4 style="font-weight: 600;">{{ object.cliente.razon_social }}</h4>
+                <h4>{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
                 {% else %}
                 <h4>{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
                 {% endif %}
@@ -90,40 +91,88 @@ Detalle de la Orden de Reparación
             <h5>al {{ ultimo_historial_estado.fecha_cambio|date:"d/m/Y" }}</h5>
             <hr>
         </div>
-      
+
     </div>  
-<div class="row2">
-    <h3 class="heading">Historial</h3>
-    <div class="timeline">
-        {% for state in estados %}
-        <div class="timeline-row">
-            <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-right">
-                <div class="timeline-content">
-                    <h4>{{ state|capfirst }}</h4>
+    <div class="row2">
+        <h3 class="heading">Historial</h3>
+        <div class="timeline">
+            {% for state in estados %}
+            <div class="timeline-row">
+                <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-right">
+                    <div class="timeline-content">
+                        <h4>{{ state|capfirst }}</h4>
+                    </div>
+                </div>
+                <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-left">
+                    <div class="timeline-content timeline-date">
+                        <span>
+                            {% for historial in historial %}
+                                {% if historial.estado == state %}
+                                    {{ historial.fecha_cambio|date:"d/m/Y" }}
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div class="timeline-item {% if state == object.estado %}active{% endif %} timeline-item-left">
-                <div class="timeline-content timeline-date">
-                    <span>
-                        {% for historial in historial %}
-                            {% if historial.estado == state %}
-                                {{ historial.fecha_cambio|date:"d/m/Y" }}
-                            {% endif %}
-                        {% endfor %}
-                    </span>
-                </div>
-            </div>
+            {% endfor %}
+
         </div>
-        {% endfor %}
+   
     </div>
+    <div class="row3">
+         <hr>
+         <h3 class="heading">Presupuesto</h3>
+        {% if presupuesto %}
+       
+       
+        <div class="presupuesto">
+        <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
+            <tr>
+                <th>fecha de creacion</th>
+                <td>{{ presupuesto.fecha_creacion }}</td>
+            </tr>
+            <tr>
+            {%if presupuesto.aprobado %}
+                <th>fecha de aprobacion</th>
+                <td>{{ presupuesto.fecha_aprobacion }}</td>
+            </tr>
+            {%endif%}
+                {%if presupuesto.rechazado %}
+                <th>fecha de rechazo</th>
+                <td>{{ presupuesto.fecha_rechazo }}</td>
+            </tr>
+            {%endif%}
+                {% if not presupuesto.rechazado and not presupuesto.aprobado %}
+                <th>Estado</th>
+                <td>Pendiente de aprobacion o rechazo</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>Descripcion</th>
+                <td>{{ presupuesto.descripcion }}</td>
+            </tr>
+            <tr>
+                <th class="total">Total</th>
+                <td>{{ presupuesto.total }}$</td>
+            </tr>
+
+            </table>
+        </div>
+        <div class="botones">
+            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">mail Orden</a>
+            <a href="{% url 'mandar_mail_presupuesto' presupuesto.id %}" class="btn btn-formulario">mail Presupuesto</a>
+            <a href="{% url 'editar_presupuesto' presupuesto.id %}" class="btn btn-formulario">Editar</a>    
+        </div>
+        {% else %}
+        <div class="botones">
+            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">Mail Orden</a>
+            <a href="{% url 'presupuestar_orden' object.id %}" class="btn btn-formulario">Presupuestar</a>
+        </div>
+        {% endif %}
+    </div>
+    
 </div>
-
-    
-   </div>
-
-
- 
-    
 </div>
 {% endblock %}
 

@@ -76,5 +76,7 @@ class PresupuestoForm(forms.ModelForm):
     class Meta:
         model = Presupuesto
         fields = [ 'descripcion', 'total']
-
+        widgets = {
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 435px", 'placeholder': 'Descripcion'})
+        }
         

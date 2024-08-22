@@ -6,7 +6,7 @@ Detalle Presupuesto
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'web/styles/detalle_orden.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/detalle_presupuesto.css' %}" />
 {% endblock %}
 
 {% block main %}
@@ -91,7 +91,7 @@ Detalle Presupuesto
     </div>
     </div>
 
-   <div class="col2">  
+    <div class="col2">  
     <div class="row1">
         <div class="estado">
             <h5>La orden  {{ object.id }} está</h5>  
@@ -101,7 +101,7 @@ Detalle Presupuesto
         </div>
       
     </div>  
-<div class="row2">
+    <div class="row2">
     <h3 class="heading">Presupuesto</h3>
     <div class="presupuesto">
          <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
@@ -130,7 +130,7 @@ Detalle Presupuesto
             <td>{{ object.descripcion }}</td>
         </tr>
                     <tr>
-            <th>Total</th>
+            <th class="total">Total</th>
             <td>{{ object.total }}$</td>
         </tr>
 
@@ -138,7 +138,12 @@ Detalle Presupuesto
         
 
     </div>
-  <a href="{% url 'mandar_mail_presupuesto' object.id %}" class="btn btn-primary">mandar mail</a>
-  <a href="{% url 'editar_presupuesto' object.id %}" class="btn btn-primary">Editar</a>
+    <div class="botones">
+        <a href="{% url 'mandar_mail_presupuesto' object.id %}" class="btn btn-formulario">mandar mail</a>
+        <a href="{% url 'editar_presupuesto' object.id %}" class="btn btn-formulario">Editar</a>    
+    </div>
+
+    </div>
+    </div>
 </div>
 {% endblock %}
