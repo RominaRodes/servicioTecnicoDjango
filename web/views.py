@@ -39,7 +39,8 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.utils.safestring import mark_safe
-
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 logger = logging.getLogger(__name__)
 
 def login_user(request):
@@ -62,6 +63,7 @@ def logout_user(request):
     messages.success(request, "Se cerró la sesión correctamente")
     return redirect('login')
 
+@login_required
 def index(request):
     estado = request.GET.get('estado', '')
     if estado:
@@ -108,6 +110,7 @@ def index(request):
   
     return render(request, 'web/index.html', context)
 
+@login_required
 def get_todas_las_ordenes(request):
     ordenes_qs = OrdenDeReparacion.objects.all().order_by('-fecha_ingreso')
     ordenes_info = []
@@ -150,6 +153,7 @@ def get_todas_las_ordenes(request):
 
     data = {'message': 'Success', 'ordenes': ordenes_info}
     return JsonResponse(data, safe=False)
+
 
 def get_ordenes_por_estado(request, estado):
     ordenes_qs = OrdenDeReparacion.objects.filter(estado=estado).order_by('-fecha_ingreso')
@@ -194,7 +198,8 @@ def get_ordenes_por_estado(request, estado):
     data = {'message': 'Success', 'ordenes': ordenes_info}
     return JsonResponse(data, safe=False)
 
-class SearchResultsView(ListView):
+
+class SearchResultsView(LoginRequiredMixin, ListView):
     model = OrdenDeReparacion
     template_name = 'web/search_results.html'
 
@@ -212,10 +217,12 @@ class SearchResultsView(ListView):
 
         return object_list
 
+@login_required
 def lista_clientes(request):
     clientes = Cliente.objects.all()
     return render(request, 'web/lista_clientes.html', {'clientes': clientes})
 
+@login_required
 def crear_cliente(request):
     if request.method == "POST":
         form = ClienteForm(request.POST)
@@ -230,7 +237,8 @@ def crear_cliente(request):
     
     return render(request, 'web/crear_cliente.html', {'form': form, 'half': half})
 
-class ClienteDetailView(DetailView):
+
+class ClienteDetailView(LoginRequiredMixin, DetailView):
     model = Cliente
     template_name = 'web/detalle_cliente.html'
 
@@ -239,6 +247,7 @@ class ClienteDetailView(DetailView):
         context['ordenes'] = OrdenDeReparacion.objects.filter(cliente=self.object)
         return context
 
+@login_required
 def editar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     if request.method == 'POST':
@@ -255,19 +264,21 @@ def editar_cliente(request, pk):
 
     return render(request, 'web/editar_cliente.html', {'form': form, 'half': half, 'cliente_id': cliente.id })
 
+@login_required
 def cliente_eliminado(request):
     clientes= Cliente.objects.all()
     messages.success(request, 'El cliente fue eliminado con éxito')
     return render(request, 'web/lista_clientes.html', {'clientes': clientes})
 
-class ClienteDeleteView(DeleteView):
+
+class ClienteDeleteView(LoginRequiredMixin, DeleteView):
     model: Cliente
     success_url = reverse_lazy('cliente_eliminado')
     def get_object(self):
         id_ = self.kwargs.get("pk")
         return get_object_or_404(Cliente, id=id_)
 
-
+@login_required
 def crear_orden(request):
     if request.method == 'POST':
         orden_form = OrdenDeReparacionForm(request.POST)
@@ -289,6 +300,7 @@ def crear_orden(request):
         'maquina_form': maquina_form,
     })
 
+@login_required
 def lista_ordenes(request):
     estado = request.GET.get('estado', '')
     if estado:
@@ -326,6 +338,7 @@ def lista_ordenes(request):
     }
     return render(request, 'web/lista_ordenes.html', context)
 
+@login_required
 def presupuestar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, pk=orden_id)
     
@@ -344,6 +357,7 @@ def presupuestar_orden(request, orden_id):
     
     return render(request, 'web/crear_presupuesto.html', {'form': form, 'orden': orden})
 
+@login_required
 def aceptar_presupuesto_por_mail(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     if timezone.now() > presupuesto.fecha_creacion + timedelta(days=30):
@@ -354,6 +368,7 @@ def aceptar_presupuesto_por_mail(request, uuid):
     messages.success(request, 'El presupuesto fue aceptado con éxito')
     return redirect('listado_ordenes')
 
+@login_required
 def rechazar_presupuesto_por_mail(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     if timezone.now() > presupuesto.fecha_creacion + timedelta(days=30):
@@ -364,6 +379,7 @@ def rechazar_presupuesto_por_mail(request, uuid):
     messages.success(request, 'El presupuesto fue rechazado con éxito')
     return redirect('listado_ordenes')
 
+@login_required
 def confirmar_aceptar_presupuesto(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     aceptar_url = reverse('aceptar_presupuesto_por_mail', args=[uuid])
@@ -373,6 +389,7 @@ def confirmar_aceptar_presupuesto(request, uuid):
     messages.success(request, mensaje)
     return redirect('listado_ordenes')
 
+@login_required
 def confirmar_rechazar_presupuesto(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     rechazar_url = reverse('rechazar_presupuesto_por_mail', args=[uuid])
@@ -381,19 +398,22 @@ def confirmar_rechazar_presupuesto(request, uuid):
     messages.success(request, mensaje)
     return redirect('listado_ordenes')
 
+@login_required
 def reparar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, id=orden_id)
     orden.estado = 'reparada'
     orden.save()
     return redirect('listado_ordenes')
 
+@login_required
 def entregar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, id=orden_id)
     orden.estado = 'entregada'
     orden.save()
     return redirect('listado_ordenes')
 
-class EditarPresupuestoView(UpdateView):
+
+class EditarPresupuestoView(LoginRequiredMixin, UpdateView):
     model = Presupuesto
     form_class = PresupuestoForm
     template_name = 'web/editar_presupuesto.html'
@@ -407,7 +427,8 @@ class EditarPresupuestoView(UpdateView):
     def get_success_url(self):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
 
-class OrdenDeReparacionDetailView(DetailView):
+
+class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):
     model = OrdenDeReparacion
     template_name = 'web/detalle_orden.html'
 
@@ -425,7 +446,7 @@ class OrdenDeReparacionDetailView(DetailView):
         return context
 
 
-class PresupuestoDetailView(DetailView):
+class PresupuestoDetailView(LoginRequiredMixin, DetailView):
     model = Presupuesto
     template_name = 'web/detalle_presupuesto.html'
 
@@ -441,6 +462,7 @@ class PresupuestoDetailView(DetailView):
         context['accesorios'] = orden.maquina.accesorios.all()
         return context
 
+@login_required
 def get_categorias(_request):
     categorias=list(Categoria.objects.values())
 
@@ -450,6 +472,7 @@ def get_categorias(_request):
         data={'message': "Categorias no encontradas"} 
     return JsonResponse(data)
 
+@login_required
 def get_subcategorias(_request,categoria_id):
     subcategorias = list(SubCategoria.objects.filter(categoria=categoria_id).values())
     if(len(subcategorias)>0):
@@ -459,6 +482,7 @@ def get_subcategorias(_request,categoria_id):
 
     return JsonResponse(data)
 
+@login_required
 def get_modelos(_request, subcategoria_id):
     modelos = list(Modelo.objects.filter(subcategoria=subcategoria_id).values())
     if(len(modelos)>0):
@@ -468,6 +492,7 @@ def get_modelos(_request, subcategoria_id):
 
     return JsonResponse(data)
 
+@login_required
 def get_accesorios(request, categoria_id):
     accesorios_categoria = list(Accesorio.objects.filter(categoria=categoria_id).values())
     accesorios_generales = list(Accesorio.objects.filter(categoria__isnull=True).values())
@@ -481,7 +506,7 @@ def get_accesorios(request, categoria_id):
 
     return JsonResponse(data)
 
-
+@login_required
 @api_view(['GET'])
 def mandar_mail(request,id_presupuesto):
     presupuesto = get_object_or_404(Presupuesto, pk=id_presupuesto)
@@ -581,7 +606,7 @@ def mandar_mail(request,id_presupuesto):
         logger.error(f'Error al enviar correo electrónico: {str(e)}')
         return Response({"message": f'Error al enviar correo electrónico: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
     
-    
+@login_required   
 @api_view(['GET'])
 def mandar_mail_comprobante_entrega(request,id_orden):
     orden = get_object_or_404(OrdenDeReparacion, pk=id_orden)
