@@ -98,13 +98,13 @@ class Maquina(models.Model):
     
 
 class CondicionIVA(models.Model):
-    PARTICULAR = 'particular'
+    CONSUMIDOR_FINAL = 'Consumidor Final'
     INSCRIPTO = 'inscripto'
     MONOTRIBUTISTA = 'monotributista'
     EXENTO = 'exento'
 
     CONDICION_IVA_CHOICES = [
-        (PARTICULAR, 'Particular'),
+        (CONSUMIDOR_FINAL, 'Consumidor Final'),
         (INSCRIPTO, 'Inscripto'),
         (MONOTRIBUTISTA, 'Monotributista'),
         (EXENTO, 'Exento'),
@@ -114,6 +114,22 @@ class CondicionIVA(models.Model):
 
     def __str__(self):
         return self.get_nombre_display()
+    
+class TipoCliente(models.Model):
+    DISTRIBUIDOR = 'distribuidor'
+    PROVEEDOR = 'proveedor'
+    PARTICULAR = 'particular'
+
+    TIPO_CLIENTE_CHOICES = [
+        (DISTRIBUIDOR, 'Distribuidor'),
+        (PROVEEDOR, 'Proveedor'),
+        (PARTICULAR, 'Particular'),
+    ]
+
+    nombre = models.CharField(max_length=20, choices=TIPO_CLIENTE_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.get_nombre_display()                              
 
 
 class Cliente(models.Model):
@@ -122,6 +138,8 @@ class Cliente(models.Model):
     empresa = models.BooleanField(default=False)
     razon_social = models.CharField(max_length=100, verbose_name="Razon Social", null=True, blank=True)
     condicion_iva = models.ForeignKey(CondicionIVA, on_delete=models.CASCADE, verbose_name="Condición IVA")
+    cuit= models.CharField(max_length=100, verbose_name="Cuit", null=True, blank=True)
+    tipo_cliente = models.ForeignKey(TipoCliente, on_delete=models.CASCADE, default=3, verbose_name="Tipo Cliente")
     domicilio = models.CharField(max_length=200, verbose_name="Domicilio")
     localidad = models.CharField(max_length=45, verbose_name="Localidad")
     codigo_postal = models.CharField(max_length=6, verbose_name="Codigo Postal")
