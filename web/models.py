@@ -2,6 +2,7 @@
 from django.db import models
 from django.utils import timezone
 import uuid
+from django.core.exceptions import ValidationError
 
 class Categoria(models.Model):
     DESTRUCTORA = "Destructoras"
@@ -131,25 +132,40 @@ class TipoCliente(models.Model):
     def __str__(self):
         return self.get_nombre_display()                              
 
+class Provincia(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.nombre
 
 class Cliente(models.Model):
-    nombre = models.CharField(max_length=100, verbose_name="Nombre del cliente")
-    apellido = models.CharField(max_length=100, verbose_name="Apellido del cliente")
+    nombre = models.CharField(max_length=100, null=True, blank=True,verbose_name="Nombre o razon socia")
     empresa = models.BooleanField(default=False)
-    razon_social = models.CharField(max_length=100, verbose_name="Razon Social", null=True, blank=True)
-    condicion_iva = models.ForeignKey(CondicionIVA, on_delete=models.CASCADE, verbose_name="Condición IVA")
-    cuit= models.CharField(max_length=100, verbose_name="Cuit", null=True, blank=True)
-    tipo_cliente = models.ForeignKey(TipoCliente, on_delete=models.CASCADE, default=3, verbose_name="Tipo Cliente")
-    domicilio = models.CharField(max_length=200, verbose_name="Domicilio")
-    localidad = models.CharField(max_length=45, verbose_name="Localidad")
-    codigo_postal = models.CharField(max_length=6, verbose_name="Codigo Postal")
-    telefono = models.CharField(max_length=20, verbose_name="Telefono")
-    telefono_alternativo = models.CharField(max_length=20, verbose_name="Telefono Alternativo", null=True, blank=True)
-    email = models.CharField(max_length=100, verbose_name="Email", unique=True)
-
+    razon_social = models.CharField(max_length=100, null=True, blank=True, verbose_name="Razon social")
+    contacto = models.CharField(max_length=100, null=True, blank=True, verbose_name="Contacto")
+    condicion_iva = models.ForeignKey(CondicionIVA, on_delete=models.CASCADE, verbose_name="Condicion IVA")
+    cuit = models.CharField(max_length=100, null=True, blank=True, verbose_name="CUIT")
+    dni = models.CharField(max_length=8, null=True, blank=True, verbose_name="DNI")
+    tipo_cliente = models.ForeignKey(TipoCliente, on_delete=models.CASCADE)
+    domicilio = models.CharField(max_length=200, null=True, blank=True)
+    localidad = models.CharField(max_length=45, null=True, blank=True)
+    provincia = models.ForeignKey(Provincia, on_delete=models.SET_NULL, null=True)
+    codigo_postal = models.CharField(max_length=100, null=True, blank=True)
+    telefono = models.CharField(max_length=20)
+    telefono_alternativo = models.CharField(max_length=20, null=True, blank=True)
+    email = models.EmailField(max_length=100, null=True, blank=True)
+    migrated = models.BooleanField(default=False)  #marca los clientes migrados de access 
+    
+    def clean(self):
+        # Saltea las validationes para clientes migrados
+        if not self.migrated:
+            if self.empresa and not self.cuit:
+                raise ValidationError('CUIT es obligatorio para empresas.')
+            if not self.empresa and not self.dni:
+                raise ValidationError('DNI es obligatorio para particulares.')
     
     def __str__(self):
-        return  f"{self.pk} - {self.razon_social or ''} {self.nombre} {self.apellido}"
+        return  f"{self.pk} - {self.nombre}"
 
 
 

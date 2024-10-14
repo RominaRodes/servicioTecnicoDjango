@@ -1,3 +1,10 @@
-#main-section-container > div > h1 {
+#main-section-container > div > h1, h5 {
     color: var(--color-scroll-hover);
+}
+
+.recuadro {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 15px;
 }

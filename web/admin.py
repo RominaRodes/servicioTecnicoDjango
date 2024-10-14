@@ -3,7 +3,7 @@ from .models import Categoria, SubCategoria, Modelo, Accesorio, Falla, Repuesto,
 
 
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ("id","razon_social", "nombre", "apellido")
+    list_display = ("id","razon_social", "nombre", "contacto")
 
 
 admin.site.register(Categoria)

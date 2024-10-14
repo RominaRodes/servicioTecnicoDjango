@@ -34,8 +34,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from django.conf import settings
 from email.mime.image import MIMEImage
-from django.db.models import Q
-from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.db.models import Q,Case, When, Value, IntegerField
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.utils.safestring import mark_safe
@@ -199,6 +198,7 @@ def get_ordenes_por_estado(request, estado):
     return JsonResponse(data, safe=False)
 
 
+
 class SearchResultsView(LoginRequiredMixin, ListView):
     model = OrdenDeReparacion
     template_name = 'web/search_results.html'
@@ -208,19 +208,74 @@ class SearchResultsView(LoginRequiredMixin, ListView):
         if not query:
             return OrdenDeReparacion.objects.none()
 
-        vector = SearchVector('id', 'maquina__serie', 'maquina__categoria__nombre', 'estado', 'cliente__id', 'cliente__razon_social', 'cliente__apellido')
-        search_query = SearchQuery(query)
-
-        object_list = OrdenDeReparacion.objects.annotate(
-            search=vector
-        ).filter(search=search_query)
+        object_list = OrdenDeReparacion.objects.filter(
+            Q(id__icontains=query) |
+            Q(maquina__serie__icontains=query) |
+            Q(maquina__categoria__nombre__icontains=query) |
+            Q(estado__icontains=query) |
+            Q(cliente__id__icontains=query) |
+            Q(cliente__razon_social__icontains=query) |
+            Q(cliente__nombre__icontains=query) |
+            Q(cliente__contacto__icontains=query) |
+            Q(cliente__dni__icontains=query) |
+            Q(cliente__cuit__icontains=query)
+        )
 
         return object_list
 
+
+class BuscarClienteView(LoginRequiredMixin, ListView):
+    model = Cliente
+    template_name = 'web/buscar_cliente_results.html'
+    paginate_by = 15  # paginación automáticamente
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        
+        if query:
+            if query.isdigit():  # Si la consulta es numérica
+                object_list = Cliente.objects.filter(
+                    Q(id__icontains=query) |
+                    Q(cuit__icontains=query) |
+                    Q(dni__icontains=query) |
+                    Q(telefono__icontains=query)
+                ).order_by('id')
+            else:  # Si la consulta contiene letras
+                object_list = Cliente.objects.filter(
+                    Q(nombre__icontains=query) |
+                    Q(contacto__icontains=query) |
+                    Q(email__icontains=query)
+                ).annotate(
+                    search_priority=Case(
+                        When(nombre__icontains=query, then=Value(1)),
+                        When(contacto__icontains=query, then=Value(2)),
+                        When(email__icontains=query, then=Value(3)),
+                        default=Value(4),
+                        output_field=IntegerField(),
+                    )
+                ).order_by('search_priority', 'id')
+        else:
+            object_list = Cliente.objects.none()
+        
+        return object_list
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get("q")  # Mantener la consulta en la barra de búsqueda
+        return context
+    
 @login_required
 def lista_clientes(request):
-    clientes = Cliente.objects.all()
-    return render(request, 'web/lista_clientes.html', {'clientes': clientes})
+    clientes = Cliente.objects.all().order_by('-id')
+
+    paginator = Paginator(clientes, 15)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'web/lista_clientes.html', {'page_obj': page_obj,'clientes': clientes })
+
 
 @login_required
 def crear_cliente(request):

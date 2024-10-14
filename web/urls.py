@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from . import views
-from .views import PresupuestoDetailView, EditarPresupuestoView, SearchResultsView
+from .views import PresupuestoDetailView, EditarPresupuestoView, SearchResultsView, BuscarClienteView
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -19,6 +19,7 @@ urlpatterns = [
     path('clientes/<int:pk>/editar/', views.editar_cliente, name='editar_cliente'),
     path('clientes/eliminado/', views.cliente_eliminado, name='cliente_eliminado'),
     path('clientes/<int:pk>/eliminar/', views.ClienteDeleteView.as_view(), name='eliminar_cliente'),
+    path('buscar_cliente/', BuscarClienteView.as_view(), name='buscar_cliente_results'),
 
 
     path('ordenes/', views.lista_ordenes, name='listado_ordenes'),

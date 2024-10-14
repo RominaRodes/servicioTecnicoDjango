@@ -3,11 +3,11 @@
 {% load widget_tweaks %}
 
 {% block titulo %}
-  Crear Cliente
+Crear Cliente
 {% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}" />
 
 {% endblock %}
 
@@ -18,54 +18,100 @@
     {% csrf_token %}
     <div class="row">
       <div class="col-md-6 d-flex flex-column">
-        <div class="input-group mb-3">
-          <div class="input-group-text">
-            {{ form.empresa|add_class:"form-check-input mt-0" }}
+        <!-- Campo Nombre -->
+        <div class="form-floating mb-3">
+          {{ form.nombre|add_class:"form-control" }}
+          <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+          {{ form.nombre.errors }}
+        </div>
+
+        <!-- Campo Tipo Cliente y Condición IVA -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.tipo_cliente|add_class:"form-select" }}
+              <label for="{{ form.tipo_cliente.id_for_label }}">Tipo Cliente</label>
+              {{ form.tipo_cliente.errors }}
+            </div>
           </div>
-          <div class="form-floating flex-grow-1">
-            {{ form.razon_social|add_class:"form-control" }}
-            <label for="{{ form.razon_social.id_for_label }}">Razón Social</label>
+          <div class="col-md-6">
+            <div class="form-floating mb-3">
+              {{ form.condicion_iva|add_class:"form-select" }}
+              <label for="{{ form.condicion_iva.id_for_label }}">Condición IVA</label>
+              {{ form.condicion_iva.errors }}
+            </div>
           </div>
         </div>
-        {{ form.empresa.errors }}
-        {{ form.razon_social.errors }}
-        
-        {% for field in form %}
-          {% if forloop.counter0 < half and field.name != "empresa" and field.name != "razon_social" %}
-            <div class="form-floating mb-3">
-              {% if field.name == "condicion_iva" %}
-                {{ field|add_class:"form-select" }}
-              {% else %}
-                {{ field|add_class:"form-control" }}
-              {% endif %}
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field.errors }}
+
+        <!-- Recuadro Empresa -->
+        <div class="p-3 mb-3" style="background-color: #f5f5f5; border-radius: 5px;">
+          <h5>Empresa</h5>
+          <div class="input-group mb-3">
+            <div class="input-group-text">
+              {{ form.empresa|add_class:"form-check-input mt-0" }}
             </div>
-          {% endif %}
-        {% endfor %}
+            <div class="form-floating flex-grow-1">
+              {{ form.razon_social|add_class:"form-control" }}
+              <label for="{{ form.razon_social.id_for_label }}">Razón Social</label>
+            </div>
+          </div>
+
+          <div class="form-floating mb-3">
+            {{ form.cuit|add_class:"form-control" }}
+            <label for="{{ form.cuit.id_for_label }}">CUIT</label>
+            {{ form.cuit.errors }}
+          </div>
+
+          <div class="form-floating mb-3">
+            {{ form.contacto|add_class:"form-control" }}
+            <label for="{{ form.contacto.id_for_label }}">Contacto</label>
+            {{ form.contacto.errors }}
+          </div>
+        </div>
+
+        <!-- Recuadro Particular -->
+        <div class="p-3 mb-3" style="background-color: #f5f5f5; border-radius: 5px;">
+          <h5>Particular</h5>
+          <div class="form-floating mb-3">
+            {{ form.dni|add_class:"form-control" }}
+            <label for="{{ form.dni.id_for_label }}">DNI</label>
+            {{ form.dni.errors }}
+          </div>
+        </div>
       </div>
+      <!-- Resto de los campos -->
+
       <div class="col-md-6 d-flex flex-column">
         {% for field in form %}
-          {% if forloop.counter0 >= half and field.name != "empresa" and field.name != "razon_social" %}
-            <div class="form-floating mb-3">
-              {% if field.name == "condicion_iva" %}
-                {{ field|add_class:"form-select" }}
-              {% else %}
-                {{ field|add_class:"form-control" }}
-              {% endif %}
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field.errors }}
-            </div>
-          {% endif %}
+        {% if field.name not in "nombre tipo_cliente condicion_iva empresa razon_social cuit contacto dni" %}
+        <div class="form-floating mb-3">
+          {{ field|add_class:"form-control" }}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field.errors }}
+        </div>
+        {% endif %}
         {% endfor %}
+        <div class="d-grid d-md-block mt-1">
+          <button type="submit" class="btn btn-lg btn-formulario">Guardar</button>
+        </div>
+
       </div>
+
     </div>
 
-    <button type="submit" class="btn btn-formulario">Guardar</button>
   </form>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  document.getElementById('id_cuit').addEventListener('input', function (e) {
+    let cuit = e.target.value.replace(/\D/g, '');
+    if (cuit.length > 2) cuit = cuit.slice(0, 2) + '-' + cuit.slice(2);
+    if (cuit.length > 10) cuit = cuit.slice(0, 11) + '-' + cuit.slice(11);
+    e.target.value = cuit;
+  });
+</script>
+
 {% endblock %}
