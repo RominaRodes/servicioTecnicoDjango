@@ -8,44 +8,175 @@ Editar Presupuesto
 
 {% block extra_css %}
 <link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_presupuesto.css' %}" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block main %}
 <div class="container mt-5">
-    <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
-    <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
-    {% if orden.cliente.empresa %}
+  <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
+  <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
+      {% if orden.cliente.empresa %}
       {{ orden.cliente.razon_social }}<br>
-    {% else %}
+      {% else %}
       {{ orden.cliente.nombre }} {{ orden.cliente.apellido }}
-    {% endif %}
-  </a></h5>
-  <h5>Maquina: {{orden.maquina}}</h5>
+      {% endif %}
+    </a></h5>
+  <h5>Maquina: {{ orden.maquina }}</h5>
+
   <form method="post">
     {% csrf_token %}
     <div class="row">
-       <div class="col-md-12">
+      <div class="col-md-12">
         {% for field in form %}
-          <div class="form-floating mb-3">
-              {{ field|add_class:"form-control" }}
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field.errors }}
-          </div>
-            
+        <div class="form-floating mb-3">
+          {{ field|add_class:"form-control" }}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field.errors }}
+        </div>
         {% endfor %}
       </div>
-    </div>  
-    <button type="submit" class="btn btn-formulario">GUARDAR</button>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-md-8">
+        <div class="form-floating mb-3">
+          {{ form.repuestos|add_class:"form-control repuestos-select" }}
+          <label for="{{ form.repuestos.id_for_label }}">Repuesto</label>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="form-floating">
+          {{ form.cantidad|add_class:"form-control" }}
+          <label for="{{ form.cantidad.id_for_label }}">Cantidad</label>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-sm btn-primary mt-2" id="add-repuesto">Agregar Repuesto</button>
+      </div>
+    </div>
+
+    <table class="table mt-4" id="repuestos-table" style="display: none;">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="repuestos-list">
+        <!-- Los repuestos existentes se mostrarán aquí -->
+        {% for repuesto in repuestos_presupuestos %}
+        <tr data-id="{{ repuesto.repuesto.id }}">
+          <td>{{ repuesto.repuesto.id }}</td>
+          <td>{{ repuesto.repuesto.nombre }}</td>
+          <td>{{ repuesto.repuesto.precio }}</td>
+          <td><input type="number" class="form-control cantidad" value="{{ repuesto.cantidad }}" min="1"></td>
+        
+          <td><button type="button" class="btn btn-danger btn-sm remove-repuesto">✖</button></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-end"><strong>Total:</strong></td>
+          <td id="total-cost" class="fw-bold">{{ total_cost }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="form-floating">
+          {{ form.total_estimado|add_class:"form-control" }}
+          <label for="{{ form.total_estimado.id_for_label }}">Total del Presupuesto</label>
+        </div>
+        {{ form.total_estimado.errors }}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-success">GUARDAR</button>
     <a href="{% url 'detalle_presupuesto' object.pk %}" class="btn btn-formulario">Cancelar</a>
   </form>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('#id_repuestos').select2().next().addClass('repuestos-select-container');
+  });
 
+  document.addEventListener("DOMContentLoaded", function () {
+    const repuestosSelect = document.getElementById("id_repuestos");
+    const cantidadInput = document.getElementById("id_cantidad");
+    const addRepuestoButton = document.getElementById("add-repuesto");
+    const repuestosTable = document.getElementById("repuestos-table");
+    const repuestosListBody = document.getElementById("repuestos-list");
+    const totalCostDisplay = document.getElementById("total-cost");
 
-</div>
+    let repuestosList = [];
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    // Función para actualizar el total
+    function updateTotal() {
+      let total = 0;
+      const rows = repuestosListBody.querySelectorAll("tr");
+      rows.forEach(row => {
+        const cantidad = row.querySelector(".cantidad").value;
+        const precio = parseFloat(row.querySelector("td:nth-child(3)").textContent);
+        const subtotal = cantidad * precio;
+        row.querySelector(".subtotal").textContent = subtotal.toFixed(2);
+        total += subtotal;
+      });
+
+      totalCostDisplay.textContent = total.toFixed(2);
+    }
+
+    // Agregar repuestos desde el formulario
+    addRepuestoButton.addEventListener("click", function () {
+      const repuestoId = repuestosSelect.value;
+      const repuestoName = repuestosSelect.options[repuestosSelect.selectedIndex].text;
+      const cantidad = parseInt(cantidadInput.value);
+
+      if (!repuestoId || !cantidad) {
+        alert("Por favor, seleccione un repuesto y especifique una cantidad.");
+        return;
+      }
+
+      const precio = parseFloat((Math.random() * 100).toFixed(2));  // Aquí podrías cambiar el precio según el repuesto seleccionado
+      const subtotal = precio * cantidad;
+
+      // Crear una fila para el nuevo repuesto
+      const row = document.createElement("tr");
+      row.setAttribute("data-id", repuestoId);
+      row.innerHTML = `
+        <td>${repuestoId}</td>
+        <td>${repuestoName}</td>
+        <td>${precio.toFixed(2)}</td>
+        <td><input type="number" class="form-control cantidad" value="${cantidad}" min="1"></td>
+        <td class="subtotal">${subtotal.toFixed(2)}</td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-repuesto">✖</button></td>
+      `;
+      repuestosListBody.appendChild(row);
+      repuestosTable.style.display = "table";
+      updateTotal();
+    });
+
+    // Eliminar repuesto
+    repuestosListBody.addEventListener("click", function (event) {
+      if (event.target.classList.contains("remove-repuesto")) {
+        const row = event.target.closest("tr");
+        row.remove();
+        updateTotal();
+      }
+    });
+
+    // Actualizar el total al cargar
+    updateTotal();
+  });
+</script>
 {% endblock %}
- 

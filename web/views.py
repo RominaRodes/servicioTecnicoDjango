@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .forms import ClienteForm, DetalleClienteForm, OrdenDeReparacionForm,  PresupuestoForm, MaquinaForm
-from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, HistorialEstado, SubCategoria, Modelo, Categoria, Accesorio
+from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, HistorialEstado, SubCategoria, Modelo, Categoria, Accesorio, Repuesto, RepuestoPresupuesto, MovimientoStockRepuesto
 import math 
 from django.views.generic import TemplateView, ListView
 from django.views.generic.detail import DetailView
@@ -12,7 +12,7 @@ from django.urls import reverse_lazy
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-import io
+from django.db.models import Sum, F
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from .pdfs import generar_template_presupuesto
@@ -127,7 +127,6 @@ def get_todas_las_ordenes(request):
                 'cliente': {
                     'id': orden.cliente.id,
                     'nombre': orden.cliente.nombre,
-                    'apellido': orden.cliente.apellido,
                     'empresa': orden.cliente.empresa,
                     'razon_social': orden.cliente.razon_social
                 },
@@ -171,7 +170,6 @@ def get_ordenes_por_estado(request, estado):
                 'cliente': {
                     'id': orden.cliente.id,
                     'nombre': orden.cliente.nombre,
-                    'apellido': orden.cliente.apellido,
                     'empresa': orden.cliente.empresa,
                     'razon_social': orden.cliente.razon_social
                 },
@@ -393,24 +391,53 @@ def lista_ordenes(request):
     }
     return render(request, 'web/lista_ordenes.html', context)
 
+
+
+
 @login_required
 def presupuestar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, pk=orden_id)
-    
+
     if request.method == "POST":
         form = PresupuestoForm(request.POST)
         if form.is_valid():
             presupuesto = form.save(commit=False)
-            presupuesto.orden = orden  # Asignar la orden al presupuesto
+            presupuesto.orden = orden
+            presupuesto.save()
+            
+            # Procesar los repuestos y cantidades
+            repuestos_ids = request.POST.getlist('repuesto_id')
+            cantidades = request.POST.getlist('cantidad')
+
+            total_estimado = 0
+            for repuesto_id, cantidad in zip(repuestos_ids, cantidades):
+                repuesto = Repuesto.objects.get(id=repuesto_id)
+                cantidad = int(cantidad)
+                total_estimado += repuesto.precio * cantidad
+                RepuestoPresupuesto.objects.create(
+                    presupuesto=presupuesto,
+                    repuesto=repuesto,
+                    cantidad=cantidad
+                )
+            
+            # Actualizar el total estimado
+            presupuesto.total_estimado = total_estimado
             presupuesto.save()
             orden.estado = 'presupuestada'
             orden.save()
-        messages.success(request, 'El presupuesto fue creado con exito')   
-        return redirect(reverse('detalle_presupuesto', args=[presupuesto.id]))
+            
+            messages.success(request, 'Presupuesto creado con éxito')
+            return redirect(reverse('detalle_presupuesto', args=[presupuesto.id]))
     else:
         form = PresupuestoForm()
     
-    return render(request, 'web/crear_presupuesto.html', {'form': form, 'orden': orden})
+    repuestos = Repuesto.objects.all()
+    return render(request, 'web/crear_presupuesto.html', {
+        'form': form,
+        'orden': orden,
+        'repuestos': repuestos
+    })
+
 
 @login_required
 def aceptar_presupuesto_por_mail(request, uuid):
@@ -468,7 +495,7 @@ def entregar_orden(request, orden_id):
     return redirect('listado_ordenes')
 
 
-class EditarPresupuestoView(LoginRequiredMixin, UpdateView):
+class EditarPresupuestoView(UpdateView):
     model = Presupuesto
     form_class = PresupuestoForm
     template_name = 'web/editar_presupuesto.html'
@@ -477,10 +504,33 @@ class EditarPresupuestoView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         orden = self.object.orden
         context['orden'] = orden
-        return context 
+
+        # Cargar los repuestos asociados al presupuesto
+        presupuesto = self.object
+        repuestos_presupuestos = RepuestoPresupuesto.objects.filter(presupuesto=presupuesto)
         
+        # Pasar la lista de repuestos a la plantilla
+        context['repuestos_presupuestos'] = repuestos_presupuestos
+        context['repuestos'] = Repuesto.objects.all()  # Lista de repuestos disponibles
+
+        return context
+    
+    def form_valid(self, form):
+        presupuesto = form.save(commit=False)
+        repuestos_ids = self.request.POST.getlist('repuestos')  # Obtener IDs de repuestos seleccionados
+
+        # Recuperar los objetos de repuestos y asignarlos al presupuesto
+        repuestos = Repuesto.objects.filter(id__in=repuestos_ids)
+        
+        # Asignar los repuestos usando `set`, que espera un iterable
+        presupuesto.repuestos.set(repuestos)
+        
+        presupuesto.save()
+        
+
     def get_success_url(self):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
+
 
 
 class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):
@@ -515,6 +565,12 @@ class PresupuestoDetailView(LoginRequiredMixin, DetailView):
         context['maquina'] = orden.maquina
         context['orden'] = orden
         context['accesorios'] = orden.maquina.accesorios.all()
+        context['total'] = self.object.total_estimado
+        context['repuestos'] = RepuestoPresupuesto.objects.filter(presupuesto=self.object)  
+        context['total_repuestos'] = RepuestoPresupuesto.objects.filter(presupuesto=self.object) \
+            .annotate(subtotal=F('cantidad') * F('repuesto__precio')) \
+            .aggregate(total=Sum('subtotal'))['total'] or 0
+
         return context
 
 @login_required

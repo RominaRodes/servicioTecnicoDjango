@@ -31,3 +31,12 @@ td a {
 .btn-eliminar i {
   color: var(--color-badge-rechazada-opacity50);
 }
+
+a.page-link {
+  color:  rgb(0,196,233);
+  font-weight: 600;
+}
+
+li.page-item.active a{
+  background: rgb(0,196,233);
+}

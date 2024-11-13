@@ -2,45 +2,136 @@
 {% load static %}
 {% load widget_tweaks %}
 
-{% block titulo %}
-  Crear Presupuesto
-{% endblock %}
+{% block titulo %}Crear Presupuesto{% endblock %}
 
 {% block extra_css %}
-
-<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_presupuesto.css' %}" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block main %}
-    <div class="container mt-5">
-    <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
-    <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
-    {% if orden.cliente.empresa %}
-      {{ orden.cliente.razon_social }}<br>
-    {% else %}
-      {{ orden.cliente.nombre }} {{ orden.cliente.apellido }}
-    {% endif %}
-  </a></h5>
-  <h5>Maquina: {{orden.maquina}}</h5>
-  <form method="post">
+<div class="container-sm w-75 mt-3">
+  <h1 class="text-center">Crear Presupuesto</h1>
+  <form method="post" id="presupuesto-form">
     {% csrf_token %}
     <div class="row">
-       <div class="col-md-12">
-        {% for field in form %}
-          <div class="form-floating mb-3">
-              {{ field|add_class:"form-control" }}
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field.errors }}
-          </div>
-            
-        {% endfor %}
+      <div class="col-md-6 mb-3">
+        {{ form.descripcion|add_class:"form-control" }}
+        <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
       </div>
-    </div>  
-    <button type="submit" class="btn btn-formulario">Crear Presupuesto</button>
+      <div class="col-md-6 mb-3">
+        {{ form.nota_interna|add_class:"form-control" }}
+        <label for="{{ form.nota_interna.id_for_label }}">Nota Interna</label>
+      </div>
+    </div>
+
+    <!-- Selección de repuestos -->
+    <div class="row">
+      <div class="col-md-7">
+        <select class="form-control repuestos-select" style="width: 100%;" data-placeholder="Seleccione un repuesto">
+          <option value="">------</option>
+          {% for repuesto in repuestos %}
+          <option value="{{ repuesto.id }}" data-precio="{{ repuesto.precio}}">{{ repuesto.nombre }} - {{ repuesto.codigo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="number" class="form-control" min="1" placeholder="Cantidad" id="cantidad-input">
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-primary" id="add-repuesto">Agregar</button>
+      </div>
+    </div>
+
+    <!-- Tabla de repuestos añadidos -->
+    <table class="table mt-4" id="repuestos-table" style="display: none;">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="repuestos-list"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="text-end"><strong>Total:</strong></td>
+          <td id="total-estimado" class="text-end">0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Campo de total estimado -->
+    <div class="form-floating mt-4">
+      {{ form.total_estimado|add_class:"form-control" }}
+      <label for="{{ form.total_estimado.id_for_label }}">Total Estimado</label>
+    </div>
+
+    <button type="submit" class="btn btn-success mt-4">Guardar Presupuesto</button>
   </form>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function () {
+    $('.repuestos-select').select2();
+
+    $('#add-repuesto').on('click', function () {
+      const repuestoSelect = $('.repuestos-select');
+      const repuestoId = repuestoSelect.val();
+      const repuestoText = repuestoSelect.find('option:selected').text();
+      const repuestoPrecio = parseFloat(repuestoSelect.find('option:selected').data('precio'));
+      const cantidad = parseInt($('#cantidad-input').val());
+      const subtotal = repuestoPrecio * cantidad;
+
+      if (repuestoId && cantidad > 0) {
+        // Agregar fila a la tabla
+        $('#repuestos-list').append(`
+          <tr data-id="${repuestoId}">
+            <td>${repuestoText}</td>
+            <td>${repuestoPrecio.toFixed(2)}</td>
+            <td>${cantidad}</td>
+            <td>${subtotal.toFixed(2)}</td>
+            <td><button type="button" class="btn btn-sm btn-danger remove-repuesto">Eliminar</button></td>
+          </tr>
+        `);
+
+        // Crear inputs ocultos para enviar repuesto_id y cantidad al backend
+        $('#presupuesto-form').append(`
+          <input type="hidden" name="repuesto_id" value="${repuestoId}" data-row-id="${repuestoId}">
+          <input type="hidden" name="cantidad" value="${cantidad}" data-row-id="${repuestoId}">
+        `);
+
+        $('#repuestos-table').show();
+        updateTotal();
+      }
+    });
+
+    // Remover fila de la tabla y sus inputs ocultos
+    $(document).on('click', '.remove-repuesto', function () {
+      const row = $(this).closest('tr');
+      const repuestoId = row.data('id');
+
+      // Remover la fila de la tabla
+      row.remove();
+
+      // Remover inputs ocultos correspondientes
+      $(`#presupuesto-form input[data-row-id="${repuestoId}"]`).remove();
+
+      updateTotal();
+    });
+
+    function updateTotal() {
+      let total = 0;
+      $('#repuestos-list tr').each(function () {
+        total += parseFloat($(this).find('td').eq(3).text());
+      });
+      $('#total-estimado').text(total.toFixed(2));
+      $('#id_total_estimado').val(total.toFixed(2));
+    }
+  });
+</script>
+
 {% endblock %}

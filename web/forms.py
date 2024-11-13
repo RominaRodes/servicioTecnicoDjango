@@ -1,11 +1,8 @@
 # forms.py
 from django import forms
-from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, Repuesto
+from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, Repuesto, RepuestoPresupuesto
 from django.core.exceptions import ValidationError
-
-from django import forms
-from .models import Cliente
-from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 import re
 
 class ClienteForm(forms.ModelForm): 
@@ -87,16 +84,13 @@ class DetalleClienteForm(forms.ModelForm):
 class MaquinaForm(forms.ModelForm):
     class Meta:
         model = Maquina
-        fields = ['garantia', 'categoria', 'subcategoria', 'modelo', 'serie', 'falla', 'accesorios']
+        fields = ['garantia', 'categoria', 'subcategoria', 'modelo', 'serie', 'accesorios']
         widgets = {
             'garantia': forms.CheckboxInput(),
             'categoria': forms.Select(attrs={'id': 'attrcategoria', 'class': 'form-select'}),
             'subcategoria': forms.Select(attrs={'id': 'attrsubcategoria', 'class': 'form-select'}),
             'modelo': forms.Select(attrs={'id': 'attrmodelo', 'class': 'form-select'}),
-            'serie': forms.TextInput(attrs={'class': 'form-control'}),
-            'falla': forms.Select(attrs={'class': 'form-select'}),
-            
-            
+            'serie': forms.TextInput(attrs={'class': 'form-control'}), 
         }
 
         empty_labels = {
@@ -113,18 +107,30 @@ class OrdenDeReparacionForm(forms.ModelForm):
         model = OrdenDeReparacion
         fields = ['cliente', 'notas']
         widgets = {
-            'notas': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 435px", 'placeholder': 'Notas'})
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 350px", 'placeholder': 'Notas'})
         }
         empty_labels = {
             'cliente': '------',
         }
 
+from django import forms
+from .models import Presupuesto, Repuesto, RepuestoPresupuesto
 
 class PresupuestoForm(forms.ModelForm):
     class Meta:
         model = Presupuesto
-        fields = [ 'descripcion', 'total']
+        fields = ['descripcion', 'nota_interna', 'total_estimado']
         widgets = {
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'style':"height: 435px", 'placeholder': 'Descripcion'})
+            'descripcion': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Descripción del presupuesto'
+            }),
+            'nota_interna': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nota interna para técnicos'
+            }),
+            'total_estimado': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'readonly': 'readonly'  # Solo lectura para mostrar el total calculado
+            })
         }
-        

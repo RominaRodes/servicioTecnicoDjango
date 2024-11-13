@@ -80,7 +80,7 @@ Listado de Clientes
   </table>
 
   <!-- Paginación -->
-  <div class="pagination">
+  <!-- <div class="pagination">
     <span class="step-links">
       {% if page_obj.has_previous %}
       <a href="?page=1"><i class="fa-solid fa-angles-left"></i> primera</a>
@@ -97,8 +97,36 @@ Listado de Clientes
       {% endif %}
     </span>
   </div>
-</div>
-{% endblock %}
-{% block extra_js %}
+</div> -->
 
-{% endblock %}
+
+  <nav class='py-3' aria-label="Paginación de clientes">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+      </li>
+      {% endif %}
+
+      {# Calcula el rango dinámico de páginas que se mostrarán #}
+      {% for num in page_obj.paginator.page_range %}
+      {% if num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %} <li
+        class="page-item {% if page_obj.number == num %}active{% endif %}">
+        <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+
+
+  {% endblock %}
+  {% block extra_js %}
+
+  {% endblock %}

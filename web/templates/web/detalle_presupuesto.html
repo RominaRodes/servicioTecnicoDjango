@@ -1,5 +1,6 @@
 {% extends "web/base.html" %}
 {% load static %}
+{% load widget_tweaks %}
 
 {% block titulo %}
 Detalle Presupuesto
@@ -10,23 +11,43 @@ Detalle Presupuesto
 {% endblock %}
 
 {% block main %}
-<div class="container">
+<div class="container w-50">
     <div class="col1">
         <div class="cliente">
             <div>
                 <h5>Cliente</h5>
                 {% if cliente.empresa %} 
                 <h4>{{ cliente.razon_social }}</h4>
-                <h4>{{ cliente.nombre }} {{ cliente.apellido }}</h4>
+                <h4>{{ cliente.cuit }}</h4>
+                <h4>{{ cliente.contacto }}</h4>
                 {% else %}
-                <h4>{{ cliente.nombre }} {{ cliente.apellido }}</h4>
+                <h4>{{ cliente.nombre }}</h4>
+                {% if cliente.dni %}
+                <h5>CUIL</h5>
+                <h4>{{ cliente.dni }}</h4>
                 {% endif %}
+
+                {% endif %}
+            </div>
+            <div>
+                <h5>Condicion Iva</h5>
+                <h4>{{ cliente.condicion_iva }}</h4>
+            </div>
+            <div>
+                <h5>Tipo de cliente</h5>
+                <h4>{{ cliente.tipo_cliente }}</h4>
             </div>
         
             <div>
                 <h5>Telefono</h5>
                 <h4>{{cliente.telefono}}</h4>
             </div>
+            {% if cliente.telefono_alternativo %}
+            <div>
+                <h5>Telefono Alternativo</h5>
+                <h4>{{cliente.telefono_alternativo}}</h4>
+            </div>
+            {% endif %}
             <div>        
                 <h5>Direccion</h5>
                 <h4>{{cliente.direccion}}</h4>
@@ -78,20 +99,17 @@ Detalle Presupuesto
             <h4>{{ maquina.garantia|yesno:"Sí,No" }}</h4>
         </div>
 
-        <div>  
-            <h5>Falla</h5>
-            <h4>{{maquina.falla}}</h4>
-        </div>
-
         <div>
-            <h5>Notas</h5>
+            <h5>Notas de la orden</h5>
             <h4>{{ orden.notas }}</h4>
         </div>
 
     </div>
+
     </div>
 
     <div class="col2">  
+
     <div class="row1">
         <div class="estado">
             <h5>La orden  {{ object.id }} está</h5>  
@@ -99,51 +117,109 @@ Detalle Presupuesto
             <h5>al {{ ultimo_historial_estado.fecha_cambio|date:"d/m/Y" }}</h5>
             <hr>
         </div>
-      
     </div>  
+
     <div class="row2">
     <h3 class="heading">Presupuesto</h3>
-    <div class="presupuesto">
-         <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
+<div class="presupuesto">
+    <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
         <tr>
-            <th>fecha de creacion</th>
+            <th>Fecha de Creación</th>
             <td>{{ object.fecha_creacion }}</td>
         </tr>
-                    <tr>
-                        {%if object.aprobado %}
-            <th>fecha de aprobacion</th>
+
+        {% if object.aprobado %}
+        <tr>
+            <th>Fecha de Aprobación</th>
             <td>{{ object.fecha_aprobacion }}</td>
         </tr>
-        {%endif%}
-                                {%if object.rechazado %}
-            <th>fecha de rechazo</th>
+        {% endif %}
+
+        {% if object.rechazado %}
+        <tr>
+            <th>Fecha de Rechazo</th>
             <td>{{ object.fecha_rechazo }}</td>
         </tr>
-       {%endif%}
-            {% if not object.rechazado and not object.aprobado %}
+        {% endif %}
+
+        {% if not object.rechazado and not object.aprobado %}
+        <tr>
             <th>Estado</th>
-            <td>Pendiente de aprobacion o rechazo</td>
+            <td>Pendiente de aprobación o rechazo</td>
         </tr>
-      {% endif %}
-                    <tr>
-            <th>Descripcion</th>
+        {% endif %}
+
+        <tr>
+            <th>Descripción del Presupuesto</th>
             <td>{{ object.descripcion }}</td>
         </tr>
-                    <tr>
-            <th class="total">Total</th>
-            <td>{{ object.total }}$</td>
+
+        {% if object.nota_interna %}
+        <tr>
+            <th>Nota Interna</th>
+            <td>{{ object.nota_interna }}</td>
         </tr>
+        {% endif %}
 
-         </table>
-        
+        {% if repuestos %}
+        <tr>
+            <td colspan="2">
+                <table class="table table-bordered text-center">
+                    <!-- Título "Repuestos" en el head -->
+                    <thead>
+                        <tr>
+                            <th scope="col" colspan="5" class="p-2 text-center">Repuestos</th>
+                        </tr>
+                        <tr>
+                            <th scope="col" class="p-2">Código</th>
+                            <th scope="col" class="p-2">Nombre</th>
+                            <th scope="col" class="p-2">Precio</th>
+                            <th scope="col" class="p-2">Cantidad</th>
+                            <th scope="col" class="p-2">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for repuesto_presupuesto in repuestos %}
+                        <tr>
+                            <td class="p-2">{{ repuesto_presupuesto.repuesto.id }}</td>
+                            <td class="p-2">{{ repuesto_presupuesto.repuesto.nombre }}</td>
+                            <td class="p-2">{{ repuesto_presupuesto.repuesto.precio }}$</td>
+                            <td class="p-2">{{ repuesto_presupuesto.cantidad }}</td>
+                            <td class="p-2">{{ repuesto_presupuesto.costo_total_repuesto }}$</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <!-- Pie de la tabla de repuestos, sin bordes -->
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="p-2 text-end" style="border-top: none;">Total</td>
+                            <td class="p-2 text-end" style="border-top: none;">{{ total_repuestos }}$</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="2" class="text-center">No hay repuestos asociados a este presupuesto.</td>
+        </tr>
+        {% endif %}
 
-    </div>
+        <tr>
+            <th>Total del Presupuesto</th>
+            <td>{{ object.total_estimado }}$</td>
+        </tr>
+    </table>
+</div>
+
     <div class="botones">
         <a href="{% url 'mandar_mail_presupuesto' object.id %}" class="btn btn-formulario">mandar mail</a>
         <a href="{% url 'editar_presupuesto' object.id %}" class="btn btn-formulario">Editar</a>    
     </div>
 
     </div>
+
     </div>
+
 </div>
 {% endblock %}

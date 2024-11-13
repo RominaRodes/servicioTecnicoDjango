@@ -3,7 +3,7 @@
 {% load widget_tweaks %}
 
 {% block titulo %}
-  Crear Orden
+Crear Orden
 {% endblock %}
 
 {% block extra_css %}
@@ -11,62 +11,62 @@
 {% endblock %}
 
 {% block main %}
-    <div class="container mt-5">
-        <h1 class="text-center py-3">Crear Orden de Reparación</h1>
-        <form method="post">
-            {% csrf_token %}
-            <div class="row">
-                <div class="col-md-6">
-                    {% for field in orden_form %}
-                        {% if field.name == "cliente" %}
-                        <div class="form-floating mb-3">
-                            {{ field|add_class:"form-control cliente-select" }}
-                            <label for="{{ field.id_for_label }}">Cliente</label>
-                        </div>
-                        {% else %}
-                        <div class="form-floating mb-3">
-                            {{ field|add_class:"form-control" }}
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        </div>
-                        {% endif %}
-                        {{ field.errors }}
-                    {% endfor %}
+<div class="container w-75 mt-3">
+    <h1 class="text-center py-3">Crear Orden de Reparación</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                {% for field in orden_form %}
+                {% if field.name == "cliente" %}
+                <div class="form-floating mb-3">
+                    {{ field|add_class:"form-control cliente-select" }}
+                    <label for="{{ field.id_for_label }}">Cliente</label>
                 </div>
-
-                <div class="col-md-6">
-                    {% for field in maquina_form %}
-                        {% if field.name == "garantia" %}
-                        <div class="form-check mb-3">
-                            {{ field|add_class:"form-check-input" }}
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        </div>
-                        {% else %}
-                            {% if field.name == "accesorios" %}
-                            <div class="form-floating mb-3">
-                                {{ field|add_class:"form-control accesorios-select" }}
-                                <label for="{{ field.id_for_label }}">Accesorios</label>
-                            </div>
-                            {% else %}
-                            <div class="form-floating mb-3">
-                                {{ field|add_class:"form-control" }}
-                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                {{ field.errors }}
-                            </div>
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
+                {% else %}
+                <div class="form-floating mb-3">
+                    {{ field|add_class:"form-control" }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 </div>
+                {% endif %}
+                {{ field.errors }}
+                {% endfor %}
             </div>
 
-            <button type="submit" class="btn btn-formulario">Crear Orden</button>
-        </form>
-    </div>
+            <div class="col-md-6">
+                {% for field in maquina_form %}
+                {% if field.name == "garantia" %}
+                <div class="form-check mb-3">
+                    {{ field|add_class:"form-check-input" }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                </div>
+                {% else %}
+                {% if field.name == "accesorios" %}
+                <div class="form-floating mb-3">
+                    {{ field|add_class:"form-control accesorios-select" }}
+                    <label for="{{ field.id_for_label }}">Accesorios</label>
+                </div>
+                {% else %}
+                <div class="form-floating mb-3">
+                    {{ field|add_class:"form-control" }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field.errors }}
+                </div>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-formulario">Crear Orden</button>
+    </form>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'web/js/ajaxCrearOrden.js' %}"></script>
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('#id_cliente').select2({
             placeholder: '------'
         }).next().addClass('cliente-select-container');
