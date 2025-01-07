@@ -184,7 +184,6 @@ def get_ordenes_por_estado(request, estado):
                 },
                 'estado': orden.estado,
                 'fecha_ingreso': orden.fecha_ingreso,
-                'notas': orden.notas,
             },
             'accesorios': list(accesorios.values('nombre')),
             'ultimo_estado': ultimo_historial.estado,

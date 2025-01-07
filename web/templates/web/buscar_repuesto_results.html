@@ -1,0 +1,99 @@
+{% extends "web/base.html" %}
+{% load static %}
+
+{% block titulo %}
+Resultados de Búsqueda de Repuestos
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/lista_repuestos.css' %}" />
+{% endblock %}
+
+{% block main %}
+<div class="container-fluid px-4 px-lg-5 mt-5">
+    <h1 class="py-2">Resultados de Búsqueda de Repuestos</h1>
+    <div class="d-flex justify-content-between">
+        <div class="my-3">
+            <form action="{% url 'buscar_repuesto_results' %}" method="get" class="d-flex" role="search">
+                <input class="form-control me-2" type="text" placeholder="Buscar repuesto..." name="q"
+                    value="{{ query }}" />
+                <button class="btn btn-formulario" type="submit">
+                    Buscar
+                </button>
+            </form>
+        </div>
+        <div class="my-3">
+            <a href="{% url 'crear_repuesto' %}" class="btn btn-formulario mb-2">Nuevo Repuesto</a>
+        </div>
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Código</th>
+                <th>Categoría</th>
+                <th>Cantidad</th>
+                <th>Stock Crítico</th>
+                <th>Precio</th>
+                <th>Costo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for repuesto in page_obj %}
+            <tr>
+                <td>{{ repuesto.id }}</td>
+                <td>{{ repuesto.nombre }}</td>
+                <td>{{ repuesto.codigo }}</td>
+                <td>{{ repuesto.categoria.nombre }}</td>
+                <td>{{ repuesto.cantidad_actual }}</td>
+                <td>{{ repuesto.stock_critico }}</td>
+                <td title="Precio en USD">${{ repuesto.precio }}</td>
+                <td title="Costo promedio en USD basado en compras">${{ repuesto.costo_usd }}</td>
+                <td class="d-flex gap-2">
+                    <a href="{% url 'editar_repuesto' repuesto.id %}" class="btn btn-primary btn-sm">Editar</a>
+                    <a href="{% url 'movimientos_repuesto' repuesto.id %}" class="btn btn-formulario btn-sm">Movimientos</a>
+                    <a href="{% url 'registrar_compra' repuesto.id %}" class="btn btn-success btn-sm">Registrar Compra</a>
+                    <a href="{% url 'ajustar_stock' repuesto.id %}" class="btn btn-formulario btn-sm">Ajustar Stock</a>
+                </td>
+    
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">No hay repuestos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <nav aria-label="Paginación de repuestos">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}">Siguiente</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

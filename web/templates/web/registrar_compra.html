@@ -1,0 +1,24 @@
+{% extends "web/base.html" %}
+
+{% block titulo %}
+Registrar Compra - {{ repuesto.nombre }}
+{% endblock %}
+
+{% block main %}
+<div class="container mt-5">
+    <h2>Registrar Compra - {{ repuesto.nombre }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="cantidad" class="form-label">Cantidad</label>
+            <input type="number" class="form-control" id="cantidad" name="cantidad" required>
+        </div>
+        <div class="mb-3">
+            <label for="costo_unitario" class="form-label">Costo Unitario</label>
+            <input type="number" step="0.01" class="form-control" id="costo_unitario" name="costo_unitario" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Registrar Compra</button>
+        <a href="{% url 'repuestos' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

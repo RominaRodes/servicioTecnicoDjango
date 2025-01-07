@@ -1,0 +1,21 @@
+{% extends "web/base.html" %}
+
+{% block titulo %}
+Registrar Compra - {{ repuesto.nombre }}
+{% endblock %}
+
+{% block main %}
+<div class="container mt-5">
+    <h2>Ajustar Stock - {{ repuesto.nombre }}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="nueva_cantidad" class="form-label">Nueva Cantidad</label>
+        <input type="number" class="form-control" id="nueva_cantidad" name="nueva_cantidad" min="0"
+            value="{{ repuesto.cantidad_actual }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{% url 'repuestos' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+</div>
+{% endblock %}

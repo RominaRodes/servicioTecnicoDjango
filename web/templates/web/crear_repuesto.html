@@ -1,0 +1,74 @@
+{% extends "web/base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block titulo %}
+Crear Repuesto
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_cliente.css' %}">
+{% endblock %}
+
+{% block main %}
+<div class="container w-75 mt-3">
+    <h1 class="my-4">Crear Nuevo Repuesto</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Columna izquierda -->
+            <div class="col-md-6 d-flex flex-column">
+                <div class="form-floating mb-3">
+                    {{ form.nombre|add_class:"form-control" }}
+                    <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                    {{ form.nombre.errors }}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.categoria|add_class:"form-select" }}
+                    <label for="{{ form.categoria.id_for_label }}">Categoría</label>
+                    {{ form.categoria.errors }}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.codigo|add_class:"form-control" }}
+                    <label for="{{ form.codigo.id_for_label }}">Código</label>
+                    {{ form.codigo.errors }}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.ubicacion|add_class:"form-control" }}
+                    <label for="{{ form.ubicacion.id_for_label }}">Ubicación</label>
+                    {{ form.ubicacion.errors }}
+                </div>
+            </div>
+
+            <!-- Columna derecha -->
+            <div class="col-md-6 d-flex flex-column">
+                <div class="form-floating mb-3">
+                    {{ form.precio|add_class:"form-control" }}
+                    <label for="{{ form.precio.id_for_label }}">Precio (USD)</label>
+                    {{ form.precio.errors }}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.cantidad_actual|add_class:"form-control" }}
+                    <label for="{{ form.cantidad_actual.id_for_label }}">Cantidad Inicial</label>
+                    {{ form.cantidad_actual.errors }}
+                </div>
+
+                <div class="form-floating mb-3">
+                    {{ form.stock_critico|add_class:"form-control" }}
+                    <label for="{{ form.stock_critico.id_for_label }}">Stock Crítico</label>
+                    {{ form.stock_critico.errors }}
+                </div>
+
+                <div class="d-grid d-md-block mt-1">
+                    <button type="submit" class="btn btn-lg btn-formulario">Guardar</button>
+                    <a href="{% url 'repuestos' %}" class="btn btn-lg btn-secondary">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
