@@ -57,7 +57,6 @@ Listado de Órdenes de Reparación
         <th>Serie</th>
         <th>Accesorios</th>
         <th>Garantía</th>
-        <th>Falla</th>
         <th>Fecha Estado</th>
         <th>Estado</th>
         <th>Acciones</th>
@@ -71,7 +70,7 @@ Listado de Órdenes de Reparación
         <td>{{ orden_info.orden.fecha_ingreso|date:"d/m/Y" }}</td>
         <td>
           <a href="{% url 'detalle_cliente' orden_info.cliente.id %}">
-            {{ orden_info.cliente.nombre }} {{ orden_info.cliente.apellido }}
+            {{ orden_info.cliente.nombre }} 
             {% if orden_info.cliente.empresa %}
             <br>{{ orden_info.cliente.razon_social }}
             {% endif %}
@@ -87,7 +86,6 @@ Listado de Órdenes de Reparación
           {% endfor %}
         </td>
         <td>{{ orden_info.maquina.garantia|yesno:"Sí,No" }}</td>
-        <td>{{ orden_info.maquina.falla }}</td>
         <td>{{ orden_info.fecha_ultimo_estado|date:"d/m/Y" }}</td>
         <td>
             {% if orden_info.ultimo_estado == 'ingresada' %}

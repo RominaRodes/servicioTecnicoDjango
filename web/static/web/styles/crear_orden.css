@@ -1,4 +1,35 @@
+#repuestos .select2-container .select2-selection--single {
+    height: calc(3.5rem + 2px); /* Ajusta la altura */
+    padding: 0.7rem 0.75rem 0; /* Ajusta el padding */
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Ajustar el placeholder del select2 */
+#repuestos .select2-container .select2-selection__rendered {
+    line-height: 1.5;
+   /* padding-left: 0.75rem;*/
+    font-size: 1rem;
+    color: #6c757d; /* Placeholder en gris */
+}
+
+#repuesto .select2-selection--single .select2-selection__arrow {
+    height: calc(3.5rem + 2px);
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+
 /* Estilo general para el contenedor Select2 del campo cliente */
+
 .cliente-select-container .select2-selection--single {
     height: calc(3.5rem + 2px);
     padding: 1.25rem 0.75rem 0;

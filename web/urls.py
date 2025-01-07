@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path
 from . import views
-from .views import PresupuestoDetailView, EditarPresupuestoView, SearchResultsView, BuscarClienteView
+from .views import PresupuestoDetailView, EditarPresupuestoView, SearchResultsView, BuscarClienteView, BuscarRepuestoView
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -17,10 +17,16 @@ urlpatterns = [
     path('crearcliente', views.crear_cliente, name='crear_cliente'),
     path('clientes/<int:pk>/', views.ClienteDetailView.as_view(), name='detalle_cliente'),
     path('clientes/<int:pk>/editar/', views.editar_cliente, name='editar_cliente'),
-    path('clientes/eliminado/', views.cliente_eliminado, name='cliente_eliminado'),
     path('clientes/<int:pk>/eliminar/', views.ClienteDeleteView.as_view(), name='eliminar_cliente'),
     path('buscar_cliente/', BuscarClienteView.as_view(), name='buscar_cliente_results'),
 
+    path('repuestos/', views.lista_repuestos, name='repuestos'),
+    path('repuestos/crear/', views.crear_repuesto, name='crear_repuesto'),
+    path('repuestos/editar/<int:pk>/', views.editar_repuesto, name='editar_repuesto'),
+    path('repuestos/movimiento_repuestos/<int:pk>/', views. movimientos_repuesto, name='movimientos_repuesto'),
+    path('repuestos/registrar_compra/<int:pk>/', views.registrar_compra, name='registrar_compra'),
+    path('repuestos/ajustar_stock/<int:pk>/', views.ajustar_stock, name='ajustar_stock'),
+    path('buscar_repuesto/', BuscarRepuestoView.as_view(), name='buscar_repuesto_results'),
 
     path('ordenes/', views.lista_ordenes, name='listado_ordenes'),
     path('crearorden', views.crear_orden, name='crear_orden'),

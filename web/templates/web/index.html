@@ -181,7 +181,14 @@
                           <a href="{% url 'entregar_orden' orden_info.orden.id %}"><button class="btn btn-tbl entregada">A entregar</button></a>
                         {% endif %}
                       </td>
-                      <td>{%if orden_info.ultimo_estado != 'ingresada'%} <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id %}"><i class="fa-solid fa-pen-to-square presupuesto"></i></a>{% endif %}</td>
+                     
+                      <td>{%if orden_info.ultimo_estado != 'ingresada'%}
+                        {% if presupuesto.id %}
+                        <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id  %}"><i class="fa-solid fa-pen-to-square presupuesto"></i></a>
+                        {% else %}
+                        <span>Presupuesto no disponible</span>
+                        {% endif %}
+                        {% endif %}</td>
                     </tr>
                     {% endfor %}
                   </tbody>

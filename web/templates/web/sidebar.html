@@ -45,17 +45,19 @@
         </a>
       </li>
       <li class="sidebar-item">
-        <a href="/web/maquinas" class="sidebar-link">
-          <i class="fa-solid fa-gears"></i>
-          <span>Repuestos</span>
-        </a>
-      </li>
-      <li class="sidebar-item">
         <a href="#" class="sidebar-link">
           <i class="fa-solid fa-magnifying-glass"></i>
           <span>Buscar</span>
         </a>
-      </li>-->
+      </li>
+      -->
+      <li class="sidebar-item">
+        <a href="{% url 'repuestos' %}" class="sidebar-link">
+          <i class="fa-solid fa-gears"></i>
+          <span>Repuestos</span>
+        </a>
+      </li>
+      
     </ul>
     <div class="sidebar-footer">
       <a href="{% url 'logout' %}" class="sidebar-link">

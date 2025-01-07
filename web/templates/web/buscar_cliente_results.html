@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block titulo %}
-Listado de Clientes
+Resultados de Búsqueda
 {% endblock %}
 
 {% block extra_css %}
@@ -11,20 +11,17 @@ Listado de Clientes
 
 {% block main %}
 <div class="container-fluid px-4 px-lg-5 mt-5">
-    <h1 class="py-2">Resultados de busqueda</h1>
+    <h1 class="py-2">Resultados de Búsqueda</h1>
     <div class="d-flex justify-content-between">
         <div class="my-3">
             <form action="{% url 'buscar_cliente_results' %}" method="get" class="d-flex" role="search">
-                <input class="form-control me-2" type="text" placeholder="buscar cliente..." name="q"
+                <input class="form-control me-2" type="text" placeholder="Buscar cliente..." name="q"
                     value="{{ query }}" />
-                <button class="btn btn-formulario" type="submit">
-                    Buscar
-                </button>
+                <button class="btn btn-formulario" type="submit">Buscar</button>
             </form>
         </div>
         <div class="my-3">
-            <a href="{% url 'crear_cliente' %}" class="btn btn-formulario mb-2">Nuevo
-                Cliente</a>
+            <a href="{% url 'crear_cliente' %}" class="btn btn-formulario mb-2">Nuevo Cliente</a>
         </div>
     </div>
 
@@ -33,12 +30,12 @@ Listado de Clientes
             <tr>
                 <th>ID</th>
                 <th>Nombre</th>
-                <th>Razon Social</th>
+                <th>Razón Social</th>
                 <th>Contacto</th>
                 <th>CUIT</th>
                 <th>DNI</th>
                 <th>Tipo</th>
-                <th>Iva</th>
+                <th>IVA</th>
                 <th>Teléfono</th>
                 <th>Teléfono Alt.</th>
                 <th>Email</th>
@@ -63,24 +60,19 @@ Listado de Clientes
                     <a href="{% url 'editar_cliente' cliente.id %}">
                         <i class="fa-solid fa-pen-to-square btn-editar"></i>
                     </a>
-                    <form action="{% url 'eliminar_cliente' cliente.id %}" method="get" style="display: inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-eliminar">
-                            <i class="fa-regular fa-trash-can"></i>
-                        </button>
-                    </form>
+                    <a href="{% url 'eliminar_cliente' cliente.id %}" class="btn-eliminar">
+                        <i class="fa-regular fa-trash-can"></i>
+                    </a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4">No se encontraron clientes.</td>
+                <td colspan="12">No se encontraron clientes.</td>
             </tr>
-
             {% endfor %}
         </tbody>
     </table>
 
-    <!-- Paginación -->
     {% if is_paginated %}
     <nav aria-label="Paginación de clientes">
         <ul class="pagination">
@@ -89,13 +81,11 @@ Listado de Clientes
                 <a class="page-link" href="?q={{ query }}&page={{ page_obj.previous_page_number }}">Anterior</a>
             </li>
             {% endif %}
-
             {% for num in page_obj.paginator.page_range %}
             <li class="page-item {% if page_obj.number == num %}active{% endif %}">
                 <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
             </li>
             {% endfor %}
-
             {% if page_obj.has_next %}
             <li class="page-item">
                 <a class="page-link" href="?q={{ query }}&page={{ page_obj.next_page_number }}">Siguiente</a>
@@ -104,11 +94,8 @@ Listado de Clientes
         </ul>
     </nav>
     {% endif %}
-
-
-
 </div>
 {% endblock %}
-{% block extra_js %}
 
+{% block extra_js %}
 {% endblock %}

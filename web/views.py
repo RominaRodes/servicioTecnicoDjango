@@ -2,7 +2,7 @@ from django.db.models.base import Model as Model
 from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-from .forms import ClienteForm, DetalleClienteForm, OrdenDeReparacionForm,  PresupuestoForm, MaquinaForm
+from .forms import ClienteForm, DetalleClienteForm, OrdenDeReparacionForm,  PresupuestoForm, MaquinaForm, CrearRepuestoForm, EditarRepuestoForm
 from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, HistorialEstado, SubCategoria, Modelo, Categoria, Accesorio, Repuesto, RepuestoPresupuesto, MovimientoStockRepuesto
 import math 
 from django.views.generic import TemplateView, ListView
@@ -40,6 +40,8 @@ from django.contrib import messages
 from django.utils.safestring import mark_safe
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib.admin.views.decorators import staff_member_required
 logger = logging.getLogger(__name__)
 
 def login_user(request):
@@ -196,7 +198,6 @@ def get_ordenes_por_estado(request, estado):
     return JsonResponse(data, safe=False)
 
 
-
 class SearchResultsView(LoginRequiredMixin, ListView):
     model = OrdenDeReparacion
     template_name = 'web/search_results.html'
@@ -225,21 +226,20 @@ class SearchResultsView(LoginRequiredMixin, ListView):
 class BuscarClienteView(LoginRequiredMixin, ListView):
     model = Cliente
     template_name = 'web/buscar_cliente_results.html'
-    paginate_by = 15  # paginación automáticamente
+    paginate_by = 15  # Pagina automáticamente
 
     def get_queryset(self):
         query = self.request.GET.get('q')
-        
         if query:
             if query.isdigit():  # Si la consulta es numérica
-                object_list = Cliente.objects.filter(
+                return Cliente.objects.filter(
                     Q(id__icontains=query) |
                     Q(cuit__icontains=query) |
                     Q(dni__icontains=query) |
                     Q(telefono__icontains=query)
                 ).order_by('id')
             else:  # Si la consulta contiene letras
-                object_list = Cliente.objects.filter(
+                return Cliente.objects.filter(
                     Q(nombre__icontains=query) |
                     Q(contacto__icontains=query) |
                     Q(email__icontains=query)
@@ -252,15 +252,11 @@ class BuscarClienteView(LoginRequiredMixin, ListView):
                         output_field=IntegerField(),
                     )
                 ).order_by('search_priority', 'id')
-        else:
-            object_list = Cliente.objects.none()
-        
-        return object_list
-
+        return Cliente.objects.none()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['query'] = self.request.GET.get("q")  # Mantener la consulta en la barra de búsqueda
+        context['query'] = self.request.GET.get('q', '')
         return context
     
 @login_required
@@ -273,7 +269,6 @@ def lista_clientes(request):
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'web/lista_clientes.html', {'page_obj': page_obj,'clientes': clientes })
-
 
 @login_required
 def crear_cliente(request):
@@ -317,19 +312,16 @@ def editar_cliente(request, pk):
 
     return render(request, 'web/editar_cliente.html', {'form': form, 'half': half, 'cliente_id': cliente.id })
 
-@login_required
-def cliente_eliminado(request):
-    clientes= Cliente.objects.all()
-    messages.success(request, 'El cliente fue eliminado con éxito')
-    return render(request, 'web/lista_clientes.html', {'clientes': clientes})
 
+class ClienteDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    model = Cliente
+    success_url = reverse_lazy('lista_clientes')  
+    success_message = "El cliente fue eliminado con éxito."
 
-class ClienteDeleteView(LoginRequiredMixin, DeleteView):
-    model: Cliente
-    success_url = reverse_lazy('cliente_eliminado')
     def get_object(self):
         id_ = self.kwargs.get("pk")
         return get_object_or_404(Cliente, id=id_)
+
 
 @login_required
 def crear_orden(request):
@@ -391,12 +383,157 @@ def lista_ordenes(request):
     }
     return render(request, 'web/lista_ordenes.html', context)
 
-
-
-
+    
 @login_required
+def lista_repuestos(request):
+    repuestos = Repuesto.objects.all().order_by('-id')
+
+    paginator = Paginator(repuestos, 15)
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'web/lista_repuestos.html', {'page_obj': page_obj,'repuestos': repuestos })
+
+@staff_member_required
+def crear_repuesto(request):
+    if request.method == "POST":
+        form = CrearRepuestoForm(request.POST)
+        if form.is_valid():
+            repuesto = form.save()
+            messages.success(request, f"El repuesto '{repuesto.nombre}' fue creado con éxito.")
+            return redirect('movimientos_repuesto', pk=repuesto.id)  
+    else:
+        form = CrearRepuestoForm()
+    
+    return render(request, 'web/crear_repuesto.html', {'form': form})
+
+@staff_member_required
+def editar_repuesto(request, pk):
+    repuesto = get_object_or_404(Repuesto, pk=pk)
+    if request.method == "POST":
+        form = EditarRepuestoForm(request.POST, instance=repuesto)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Repuesto actualizado correctamente.")
+            return redirect('movimientos_repuesto', pk=repuesto.id)
+
+    else:
+        form = EditarRepuestoForm(instance=repuesto)
+    return render(request, 'web/editar_repuesto.html', {'form': form})
+
+@staff_member_required
+def ajustar_stock(request, pk):
+    repuesto = get_object_or_404(Repuesto, pk=pk)
+    if request.method == "POST":
+        try:
+            nueva_cantidad = int(request.POST.get('nueva_cantidad'))
+            if nueva_cantidad < 0:
+                raise ValueError("La cantidad no puede ser negativa.")
+        except (ValueError, TypeError):
+            messages.error(request, "Ingrese una cantidad válida (un número entero no negativo).")
+            return render(request, 'web/ajustar_stock.html', {'repuesto': repuesto})
+
+        diferencia = nueva_cantidad - repuesto.cantidad_actual
+        tipo_movimiento = 'entrada' if diferencia > 0 else 'salida'
+
+        if diferencia != 0:
+            MovimientoStockRepuesto.objects.create(
+                repuesto=repuesto,
+                tipo=tipo_movimiento,
+                cantidad=abs(diferencia),
+                destino='Ajuste manual'
+            )
+            repuesto.cantidad_actual = nueva_cantidad
+            repuesto.save()
+
+            if tipo_movimiento == 'entrada':
+                messages.success(request, f"Se añadieron {abs(diferencia)} unidades. Stock actualizado a {nueva_cantidad}.")
+            else:
+                messages.success(request, f"Se retiraron {abs(diferencia)} unidades. Stock actualizado a {nueva_cantidad}.")
+        else:
+            messages.info(request, "No hubo cambios en el stock.")
+
+        return redirect('movimientos_repuesto', pk=repuesto.id)
+
+    return render(request, 'web/ajustar_stock.html', {'repuesto': repuesto})
+
+
+@staff_member_required
+def registrar_compra(request, pk):
+    repuesto = get_object_or_404(Repuesto, pk=pk)
+    if request.method == "POST":
+        cantidad = int(request.POST.get('cantidad'))
+        costo_unitario = float(request.POST.get('costo_unitario'))
+        
+        MovimientoStockRepuesto.objects.create(
+            repuesto=repuesto,
+            tipo='entrada',
+            cantidad=cantidad,
+            costo_unitario=costo_unitario,
+            destino='Compra'
+        )
+        messages.success(request, f"Compra registrada: {cantidad} unidades de '{repuesto.nombre}' a {costo_unitario} cada una.")
+        return redirect('movimientos_repuesto', pk=repuesto.id)
+    
+    return render(request, 'web/registrar_compra.html', {'repuesto': repuesto})
+
+
+
+class BuscarRepuestoView(LoginRequiredMixin, ListView):
+    model = Repuesto
+    template_name = 'web/buscar_repuesto_results.html'
+    paginate_by = 15  
+    
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        if query:
+            object_list = Repuesto.objects.filter(
+                Q(nombre__icontains=query) |
+                Q(codigo__icontains=query) |
+                Q(categoria__nombre__icontains=query)
+            ).annotate(
+                search_priority=Case(
+                    When(nombre__icontains=query, then=Value(1)),
+                    When(categoria__nombre__icontains=query, then=Value(2)),
+                    When(codigo__icontains=query, then=Value(3)),
+                    default=Value(4),
+                    output_field=IntegerField(),
+                )
+            ).order_by('search_priority', 'id')
+        else:
+            object_list = Repuesto.objects.none()
+        return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.request.GET.get("q")
+        return context
+
+
+
+@staff_member_required
+def movimientos_repuesto(request, pk):
+    repuesto = get_object_or_404(Repuesto, pk=pk)
+    movimientos = MovimientoStockRepuesto.objects.filter(repuesto=repuesto).order_by('-fecha')
+    
+    paginator = Paginator(movimientos, 15)  
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'web/movimientos_repuesto.html', {
+        'repuesto': repuesto,
+        'page_obj': page_obj,
+    })
+
+@staff_member_required
 def presupuestar_orden(request, orden_id):
     orden = get_object_or_404(OrdenDeReparacion, pk=orden_id)
+
+    # Verificar si ya existe un presupuesto para esta orden
+    if hasattr(orden, 'presupuesto'):
+        messages.error(request, "Ya existe un presupuesto para esta orden.")
+        return redirect('detalle_presupuesto', pk=orden.presupuesto.pk)
 
     if request.method == "POST":
         form = PresupuestoForm(request.POST)
@@ -409,29 +546,34 @@ def presupuestar_orden(request, orden_id):
             repuestos_ids = request.POST.getlist('repuesto_id')
             cantidades = request.POST.getlist('cantidad')
 
-            total_estimado = 0
             for repuesto_id, cantidad in zip(repuestos_ids, cantidades):
                 repuesto = Repuesto.objects.get(id=repuesto_id)
                 cantidad = int(cantidad)
-                total_estimado += repuesto.precio * cantidad
+                
+                # Validar stock suficiente
+                if repuesto.cantidad_actual < cantidad:
+                    messages.error(request, f"No hay suficiente stock para el repuesto {repuesto.nombre}.")
+                    presupuesto.delete() 
+                    return redirect('presupuestar_orden', orden_id=orden.id)
+                
                 RepuestoPresupuesto.objects.create(
                     presupuesto=presupuesto,
                     repuesto=repuesto,
                     cantidad=cantidad
                 )
-            
-            # Actualizar el total estimado
-            presupuesto.total_estimado = total_estimado
-            presupuesto.save()
+
             orden.estado = 'presupuestada'
             orden.save()
-            
-            messages.success(request, 'Presupuesto creado con éxito')
-            return redirect(reverse('detalle_presupuesto', args=[presupuesto.id]))
+
+            messages.success(request, 'Presupuesto creado con éxito.')
+            print(f"Presupuesto ID: {presupuesto.id}")  
+
+            return redirect('detalle_presupuesto', pk=presupuesto.id)
     else:
         form = PresupuestoForm()
     
-    repuestos = Repuesto.objects.all()
+    # Filtrar solo repuestos con stock disponible
+    repuestos = Repuesto.objects.filter(cantidad_actual__gt=0)
     return render(request, 'web/crear_presupuesto.html', {
         'form': form,
         'orden': orden,
@@ -530,7 +672,6 @@ class EditarPresupuestoView(UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
-
 
 
 class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):

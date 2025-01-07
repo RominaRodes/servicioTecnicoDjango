@@ -14,9 +14,6 @@ class Categoria(models.Model):
         return f"{self.nombre}"
 
 
-        
-
-
 class SubCategoria(models.Model):
     nombre = models.CharField(max_length=60, verbose_name="Subcategoría")
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name="categorias")
@@ -73,10 +70,10 @@ class Repuesto(models.Model):
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)  
     costo_ultima_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Costo último
-    costo_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Costo promedio USD para cálculo promedio
+    costo_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Costo promedio USD
     cantidad_actual = models.PositiveIntegerField(default=0)  # Control de stock
     stock_critico = models.PositiveIntegerField(default=1)
-    ubicacion= models.CharField(max_length=100, blank=True, default='---')
+    ubicacion = models.CharField(max_length=100, blank=True, default='---')
 
     def descontar_stock(self, cantidad):
         """Descuenta una cantidad del stock actual."""
@@ -89,6 +86,21 @@ class Repuesto(models.Model):
     def aumentar_stock(self, cantidad):
         """Aumenta el stock actual en la cantidad especificada."""
         self.cantidad_actual += cantidad
+        
+        self.save()
+
+    def calcular_costo_promedio(self):
+        """Calcula el costo promedio basado en todas las compras."""
+        movimientos = self.movimientostockrepuesto_set.filter(tipo='entrada')
+        total_costo = sum(mov.cantidad * mov.costo_unitario for mov in movimientos if mov.costo_unitario)
+        total_cantidad = sum(mov.cantidad for mov in movimientos)
+
+        return total_costo / total_cantidad if total_cantidad > 0 else 0
+
+    
+    def actualizar_costo_promedio(self):
+        """Actualiza el costo promedio en el campo costo_usd."""
+        self.costo_usd = self.calcular_costo_promedio()
         self.save()
 
     def __str__(self):
@@ -102,26 +114,47 @@ class MovimientoStockRepuesto(models.Model):
     repuesto = models.ForeignKey(Repuesto, on_delete=models.CASCADE)
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
     cantidad = models.PositiveIntegerField()
+    costo_unitario = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Costo por unidad para entradas")
+    costo_promedio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Costo promedio al momento del movimiento")  
     fecha = models.DateTimeField(auto_now_add=True)
     destino = models.CharField(max_length=100, blank=True, null=True, help_text="Número de Orden o 'Mostrador' para ventas directas")
+
+
+    @property
+    def saldo_parcial(self):
+        movimientos = MovimientoStockRepuesto.objects.filter(repuesto=self.repuesto, fecha__lte=self.fecha).order_by('fecha')
+        saldo = 0
+        for mov in movimientos:
+            if mov.tipo == 'entrada':
+                saldo += mov.cantidad
+            elif mov.tipo == 'salida':
+                saldo -= mov.cantidad
+        return saldo
     
     def save(self, *args, **kwargs):
-        # Solo permite movimientos de salida con destino vacío si se especifica un destino manualmente.
-        if self.tipo == 'salida' and not self.destino:
-            raise ValidationError("Debe especificar un destino para las salidas de stock si no es automático.")
-        
-        # Ajuste del stock según el tipo de movimiento
-        if self.tipo == 'salida':
-            self.repuesto.descontar_stock(self.cantidad)
-        elif self.tipo == 'entrada':
-            self.repuesto.aumentar_stock(self.cantidad)
-        
+        # Guarda el movimiento primero para asegurar que se registre correctamente
         super().save(*args, **kwargs)
 
+        # Actualiza el stock y el costo promedio según el tipo de movimiento
+        if self.tipo == 'entrada':
+            self.repuesto.aumentar_stock(self.cantidad)
+            
+            # Actualiza el costo de última compra si es una entrada
+            if self.costo_unitario is not None:
+                self.repuesto.costo_ultima_compra = self.costo_unitario
+
+            # Actualiza el costo promedio del repuesto
+            self.repuesto.actualizar_costo_promedio()
+
+        elif self.tipo == 'salida':
+            self.repuesto.descontar_stock(self.cantidad)
+        
+        # Guarda el costo promedio actual en el movimiento
+        self.costo_promedio = self.repuesto.costo_usd
+        super().save(update_fields=['costo_promedio'])  # Solo actualiza el campo costo_promedio
+
     def __str__(self):
-        return f"{self.tipo.capitalize()} de {self.cantidad} - {self.repuesto.nombre} ({self.fecha}) - Destino: {self.destino or 'No especificado'}"
-
-
+        return f"{self.tipo.capitalize()} de {self.cantidad} - {self.repuesto.nombre} ({self.fecha})"
 
 
 class Maquina(models.Model):
@@ -224,22 +257,17 @@ class OrdenDeReparacion(models.Model):
     notas =  models.TextField(verbose_name="notas con respecto a la maquina", default='---')
 
     def descontar_stock(self):
-        """Descuenta el stock de cada repuesto en el presupuesto y registra el movimiento con el ID de la orden."""
-        if hasattr(self, 'presupuesto'):
+        if self.presupuesto and self.presupuesto.aprobado:
             for repuesto_presupuesto in self.presupuesto.repuestopresupuesto_set.all():
                 repuesto = repuesto_presupuesto.repuesto
-                cantidad = repuesto_presupuesto.cantidad
-
-                # Descontar el stock del repuesto
-                repuesto.descontar_stock(cantidad)
-
-                # Registrar el movimiento de salida de stock con el ID de la orden como destino
+                repuesto.descontar_stock(repuesto_presupuesto.cantidad)
                 MovimientoStockRepuesto.objects.create(
                     repuesto=repuesto,
                     tipo='salida',
-                    cantidad=cantidad,
-                    destino=str(self.id)  # Usa el ID de la orden como destino
+                    cantidad=repuesto_presupuesto.cantidad,
+                    destino=f"Orden {self.id}"
                 )
+
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -294,9 +322,20 @@ class Presupuesto(models.Model):
         return f'Presupuesto para Orden {self.orden.id}'
     
     def aprobar(self):
+        if not self.aprobado:
+            for repuesto_presupuesto in self.repuestopresupuesto_set.all():
+                repuesto = repuesto_presupuesto.repuesto
+                cantidad = repuesto_presupuesto.cantidad
+                MovimientoStockRepuesto.objects.create(
+                    repuesto=repuesto,
+                    tipo='salida',
+                    cantidad=cantidad,
+                    destino=f"Orden {self.orden.id}"
+                )
         self.aprobado = True
         self.fecha_aprobacion = timezone.now()
         self.save()
+
 
     def rechazar(self):
         self.rechazado = True

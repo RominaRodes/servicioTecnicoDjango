@@ -4,6 +4,9 @@ from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, Repuesto, 
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
 import re
+import decimal
+
+
 
 class ClienteForm(forms.ModelForm): 
     class Meta:
@@ -113,24 +116,84 @@ class OrdenDeReparacionForm(forms.ModelForm):
             'cliente': '------',
         }
 
-from django import forms
-from .models import Presupuesto, Repuesto, RepuestoPresupuesto
+
 
 class PresupuestoForm(forms.ModelForm):
     class Meta:
         model = Presupuesto
         fields = ['descripcion', 'nota_interna', 'total_estimado']
         widgets = {
-            'descripcion': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': 'Descripción del presupuesto'
-            }),
-            'nota_interna': forms.Textarea(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nota interna para técnicos'
-            }),
-            'total_estimado': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': 'readonly'  # Solo lectura para mostrar el total calculado
-            })
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Descripción',  'style':"height: 250px"}),
+            'nota_interna': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Nota Interna',  'style':"height: 250px"}),
+            'total_estimado': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Total Estimado'}),
+        }
+
+    def clean_descripcion(self):
+        descripcion = self.cleaned_data.get('descripcion')
+        if not descripcion:
+            raise forms.ValidationError("La descripción es obligatoria.")
+        if len(descripcion) < 10:
+            raise forms.ValidationError("La descripción debe tener al menos 10 caracteres.")
+        return descripcion
+
+    def clean_total_estimado(self):
+        total_estimado = self.cleaned_data.get('total_estimado')
+        if total_estimado is None:
+            raise forms.ValidationError("El total estimado es obligatorio.")
+        try:
+            total_estimado = decimal.Decimal(total_estimado)
+        except decimal.InvalidOperation:
+            raise forms.ValidationError("El total estimado debe ser un número decimal válido.")
+        if total_estimado <= 0:
+            raise forms.ValidationError("El total estimado debe ser mayor a 0.")
+        return total_estimado
+
+    def clean(self):
+        cleaned_data = super().clean()
+        repuestos_ids = self.data.getlist('repuesto_id')
+        cantidades = self.data.getlist('cantidad')
+
+        if repuestos_ids and cantidades:
+            for idx, repuesto_id in enumerate(repuestos_ids):
+                if not repuesto_id:
+                    raise forms.ValidationError(f"El repuesto en la fila {idx + 1} no es válido.")
+                try:
+                    repuesto = Repuesto.objects.get(id=repuesto_id)
+                except Repuesto.DoesNotExist:
+                    raise forms.ValidationError(f"El repuesto con ID {repuesto_id} no existe.")
+
+                try:
+                    cantidad = int(cantidades[idx])
+                    if cantidad <= 0:
+                        raise forms.ValidationError(f"La cantidad para el repuesto {repuesto.nombre} debe ser mayor a 0.")
+                except ValueError:
+                    raise forms.ValidationError(f"La cantidad en la fila {idx + 1} debe ser un número entero válido.")
+        return cleaned_data
+
+
+class CrearRepuestoForm(forms.ModelForm):
+    class Meta:
+        model = Repuesto
+        fields = ['nombre', 'categoria', 'codigo', 'precio', 'cantidad_actual', 'stock_critico', 'ubicacion']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'codigo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código'}),
+            'precio': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Precio en USD'}),
+            'cantidad_actual': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Cantidad Inicial'}),
+            'stock_critico': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock Crítico'}),
+            'ubicacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}),
+        }
+
+class EditarRepuestoForm(forms.ModelForm):
+    class Meta:
+        model = Repuesto
+        fields = ['nombre', 'categoria', 'codigo', 'precio', 'stock_critico', 'ubicacion']  # Sin 'cantidad_actual'
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'}),
+            'categoria': forms.Select(attrs={'class': 'form-select'}),
+            'codigo': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+            'precio': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Precio en USD'}),
+            'stock_critico': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock Crítico'}),
+            'ubicacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}),
         }

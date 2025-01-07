@@ -11,7 +11,7 @@ Detalle del Cliente
 
 {% block main %}
 <div class="container">
-    <h1>Detalle del Cliente</h1>
+    <h1 class="m-4">Detalle del Cliente</h1>
     <table class="table table-striped">
         <tr>
             <th>Nombre</th>
@@ -44,6 +44,10 @@ Detalle del Cliente
         <tr>
             <th>Teléfono</th>
             <td>{{ object.telefono }}</td>
+        </tr>
+        <tr>
+            <th>Teléfono alternativo</th>
+            <td>{{ object.telefono_alternativo }}</td>
         </tr>
         <tr>
             <th>Email</th>

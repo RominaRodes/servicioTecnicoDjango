@@ -2,45 +2,80 @@
 {% load static %}
 {% load widget_tweaks %}
 
-{% block titulo %}Crear Presupuesto{% endblock %}
+{% block titulo %}
+Crear Presupuesto
+{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_orden.css' %}" />
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block main %}
-<div class="container-sm w-75 mt-3">
-  <h1 class="text-center">Crear Presupuesto</h1>
+<div class="container w-75 mt-3">
+  <h1 class="text-center py-3">Crear Presupuesto</h1>
+
+  <!-- Mostrar errores generales -->
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+
   <form method="post" id="presupuesto-form">
     {% csrf_token %}
+
+    <!-- Descripción y Nota Interna -->
     <div class="row">
-      <div class="col-md-6 mb-3">
-        {{ form.descripcion|add_class:"form-control" }}
-        <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+      <div class="col-md-6">
+        <div class="form-floating mb-3">
+          {{ form.descripcion|add_class:"form-control" }}
+          <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+          {% if form.descripcion.errors %}
+          <div class="text-danger">{{ form.descripcion.errors }}</div>
+          {% endif %}
+        </div>
       </div>
-      <div class="col-md-6 mb-3">
-        {{ form.nota_interna|add_class:"form-control" }}
-        <label for="{{ form.nota_interna.id_for_label }}">Nota Interna</label>
+      <div class="col-md-6">
+        <div class="form-floating mb-3">
+          {{ form.nota_interna|add_class:"form-control" }}
+          <label for="{{ form.nota_interna.id_for_label }}">Nota Interna</label>
+          {% if form.nota_interna.errors %}
+          <div class="text-danger">{{ form.nota_interna.errors }}</div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
     <!-- Selección de repuestos -->
-    <div class="row">
-      <div class="col-md-7">
-        <select class="form-control repuestos-select" style="width: 100%;" data-placeholder="Seleccione un repuesto">
-          <option value="">------</option>
-          {% for repuesto in repuestos %}
-          <option value="{{ repuesto.id }}" data-precio="{{ repuesto.precio}}">{{ repuesto.nombre }} - {{ repuesto.codigo }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-3">
-        <input type="number" class="form-control" min="1" placeholder="Cantidad" id="cantidad-input">
-      </div>
-      <div class="col-md-2">
-        <button type="button" class="btn btn-primary" id="add-repuesto">Agregar</button>
-      </div>
+<div class="row" id="repuestos">
+  <div class="col-md-7">
+    <div class="form-floating mb-3">
+<select class="repuestos-select form-control" style="width: 100%;" data-placeholder="Seleccione un repuesto">
+  <option value="">------</option>
+  {% for repuesto in repuestos %}
+  <option value="{{ repuesto.id }}" data-precio="{{ repuesto.precio }}" data-stock="{{ repuesto.cantidad_actual }}">
+    {{ repuesto.nombre }} - {{ repuesto.codigo }}
+  </option>
+  {% endfor %}
+</select>
     </div>
+    <div id="error-repuesto" class="text-danger mt-1" style="display: none;"></div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="form-floating">
+      <input type="number" class="form-control" min="1" placeholder="Cantidad" id="cantidad-input">
+      <label for="cantidad-input">Cantidad</label>
+    </div>
+    <div id="error-cantidad" class="text-danger mt-1" style="display: none;"></div>
+  </div>
+
+  <div class="col-md-2">
+    <button type="button" class="btn btn-primary w-100 p-3" id="add-repuesto">Agregar</button>
+  </div>
+</div>
+
 
     <!-- Tabla de repuestos añadidos -->
     <table class="table mt-4" id="repuestos-table" style="display: none;">
@@ -59,79 +94,111 @@
         <tr>
           <td colspan="4" class="text-end"><strong>Total:</strong></td>
           <td id="total-estimado" class="text-end">0.00</td>
+          <td></td>
         </tr>
       </tfoot>
     </table>
 
-    <!-- Campo de total estimado -->
-    <div class="form-floating mt-4">
-      {{ form.total_estimado|add_class:"form-control" }}
-      <label for="{{ form.total_estimado.id_for_label }}">Total Estimado</label>
+    <!-- Total Estimado -->
+    <div class="col-md-6">
+      <div class="form-floating mb-3">
+        {{ form.total_estimado|add_class:"form-control" }}
+        <label for="{{ form.total_estimado.id_for_label }}">Total Estimado del Presupuesto</label>
+        {% if form.total_estimado.errors %}
+        <div class="text-danger">{{ form.total_estimado.errors }}</div>
+        {% endif %}
+      </div>
     </div>
 
-    <button type="submit" class="btn btn-success mt-4">Guardar Presupuesto</button>
+    <!-- Botón de guardar -->
+    <div class="mt-4">
+      <button type="submit" class="btn btn-formulario">Guardar Presupuesto</button>
+    </div>
   </form>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
 <script>
   $(document).ready(function () {
-    $('.repuestos-select').select2();
+      // Inicializa Select2
+    $(document).ready(function () {
+      $('#repuestos .repuestos-select').select2({
+        placeholder: 'Seleccione un repuesto...',
+        allowClear: true,
+        width: '100%'
+      });
+    });
 
+
+      // Evento para agregar un repuesto a la tabla
     $('#add-repuesto').on('click', function () {
       const repuestoSelect = $('.repuestos-select');
       const repuestoId = repuestoSelect.val();
       const repuestoText = repuestoSelect.find('option:selected').text();
       const repuestoPrecio = parseFloat(repuestoSelect.find('option:selected').data('precio'));
+      const stockDisponible = parseInt(repuestoSelect.find('option:selected').data('stock'));
       const cantidad = parseInt($('#cantidad-input').val());
-      const subtotal = repuestoPrecio * cantidad;
 
-      if (repuestoId && cantidad > 0) {
-        // Agregar fila a la tabla
-        $('#repuestos-list').append(`
-          <tr data-id="${repuestoId}">
-            <td>${repuestoText}</td>
-            <td>${repuestoPrecio.toFixed(2)}</td>
-            <td>${cantidad}</td>
-            <td>${subtotal.toFixed(2)}</td>
-            <td><button type="button" class="btn btn-sm btn-danger remove-repuesto">Eliminar</button></td>
-          </tr>
-        `);
-
-        // Crear inputs ocultos para enviar repuesto_id y cantidad al backend
-        $('#presupuesto-form').append(`
-          <input type="hidden" name="repuesto_id" value="${repuestoId}" data-row-id="${repuestoId}">
-          <input type="hidden" name="cantidad" value="${cantidad}" data-row-id="${repuestoId}">
-        `);
-
-        $('#repuestos-table').show();
-        updateTotal();
+      if (!repuestoId) {
+        alert('Por favor, seleccione un repuesto.');
+        return;
       }
-    });
 
-    // Remover fila de la tabla y sus inputs ocultos
-    $(document).on('click', '.remove-repuesto', function () {
-      const row = $(this).closest('tr');
-      const repuestoId = row.data('id');
+      if (isNaN(cantidad) || cantidad <= 0) {
+        alert('Por favor, ingrese una cantidad válida.');
+        return;
+      }
 
-      // Remover la fila de la tabla
-      row.remove();
+      if (cantidad > stockDisponible) {
+        alert(`No hay suficiente stock para el repuesto seleccionado. Stock disponible: ${stockDisponible}`);
+        return;
+      }
 
-      // Remover inputs ocultos correspondientes
-      $(`#presupuesto-form input[data-row-id="${repuestoId}"]`).remove();
+      const subtotal = repuestoPrecio * cantidad;
+      $('#repuestos-list').append(`
+    <tr data-id="${repuestoId}">
+      <td>${repuestoText.split(' - ')[1]}</td>
+      <td>${repuestoText.split(' - ')[0]}</td>
+      <td>${repuestoPrecio.toFixed(2)}</td>
+      <td>${cantidad}</td>
+      <td>${subtotal.toFixed(2)}</td>
+      <td><button type="button" class="btn btn-sm btn-danger remove-repuesto">Eliminar</button></td>
+    </tr>
+  `);
 
+      $('#presupuesto-form').append(`
+    <input type="hidden" name="repuesto_id" value="${repuestoId}" data-row-id="${repuestoId}">
+    <input type="hidden" name="cantidad" value="${cantidad}" data-row-id="${repuestoId}">
+  `);
+
+      $('#repuestos-table').show();
+      repuestoSelect.val(null).trigger('change');
+      $('#cantidad-input').val('');
       updateTotal();
     });
 
-    function updateTotal() {
-      let total = 0;
-      $('#repuestos-list tr').each(function () {
-        total += parseFloat($(this).find('td').eq(3).text());
+
+      // Eliminar repuesto de la tabla
+      $(document).on('click', '.remove-repuesto', function () {
+        const row = $(this).closest('tr');
+        const repuestoId = row.data('id');
+        row.remove();
+        $(`#presupuesto-form input[data-row-id="${repuestoId}"]`).remove();
+        updateTotal();
       });
-      $('#total-estimado').text(total.toFixed(2));
-      $('#id_total_estimado').val(total.toFixed(2));
-    }
-  });
+
+      // Actualizar el total estimado
+      function updateTotal() {
+        let total = 0;
+        $('#repuestos-list tr').each(function () {
+          total += parseFloat($(this).find('td').eq(4).text());
+        });
+        $('#total-estimado').text(total.toFixed(2));
+      }
+    });
+
 </script>
 
 {% endblock %}
