@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                             </span>
                                         </td>
                                         <td>${getBotones(ordenInfo)}</td>
-                                        <td>${ordenInfo.ultimo_estado !== 'ingresada' && ordenInfo.presupuesto_id ? `<a href="${urls.detalle_presupuesto}${ordenInfo.presupuesto_id}">Ver P</a>` : ''}</td>
+                                        <td>${ordenInfo.ultimo_estado !== 'ingresada' && ordenInfo.presupuesto_id ? `<a href="${urls.detalle_presupuesto}${ordenInfo.presupuesto_id}"><i class="fa-solid fa-pen-to-square presupuesto"></i></a>` : ''}</td>
                                     `;
                                     tableBody.appendChild(row);
                                 });
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let botones = '';
         const id = ordenInfo.orden.id;
         const presupuesto_uuid = ordenInfo.presupuesto_uuid;
-        const clienteNombre = ordenInfo.orden.cliente.empresa ? `${ordenInfo.orden.cliente.razon_social} - ${ordenInfo.orden.cliente.nombre} ${ordenInfo.orden.cliente.apellido}` : `${ordenInfo.orden.cliente.nombre} ${ordenInfo.orden.cliente.apellido}`;
+        const clienteNombre = ordenInfo.orden.cliente.empresa ? `${ordenInfo.orden.cliente.razon_social} - ${ordenInfo.orden.cliente.nombre}` : `${ordenInfo.orden.cliente.nombre}`;
 
         // Eliminar cualquier barra adicional al final de las URLs base
         const aceptarPresupuestoUrl = urls.aceptar_presupuesto.replace(/\/$/, '');

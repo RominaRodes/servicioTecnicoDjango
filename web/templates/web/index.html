@@ -122,7 +122,6 @@
                       <th>Serie</th>
                       <th>Accesorios</th>
                       <th>Garantía</th>
-                      <th>Falla</th>
                       <th>Fecha Estado</th>
                       <th>Estado</th>
                       <th>Acciones</th>
@@ -136,7 +135,7 @@
                       <td>{{ orden_info.orden.fecha_ingreso|date:"d/m/Y" }}</td>
                       <td>
                         <a href="{% url 'detalle_cliente' orden_info.cliente.id %}">
-                          {{ orden_info.cliente.nombre }} {{ orden_info.cliente.apellido }}
+                          {{ orden_info.cliente.nombre }}
                           {% if orden_info.cliente.empresa %}
                           <br>{{ orden_info.cliente.razon_social }}
                           {% endif %}
@@ -152,7 +151,6 @@
                         {% endfor %}
                       </td>
                       <td>{{ orden_info.maquina.garantia|yesno:"Sí,No" }}</td>
-                      <td>{{ orden_info.maquina.falla }}</td>
                       <td>{{ orden_info.fecha_ultimo_estado|date:"d/m/Y" }}</td>
                       <td>
                           {% if orden_info.ultimo_estado == 'ingresada' %}
@@ -181,8 +179,7 @@
                           <a href="{% url 'entregar_orden' orden_info.orden.id %}"><button class="btn btn-tbl entregada">A entregar</button></a>
                         {% endif %}
                       </td>
-                     
-                      <td>{%if orden_info.ultimo_estado != 'ingresada'%}
+                  <td>{% if orden_info.ultimo_estado != 'ingresada'%}
                         {% if presupuesto.id %}
                         <a href="{% url 'detalle_presupuesto' orden_info.presupuesto_id  %}"><i class="fa-solid fa-pen-to-square presupuesto"></i></a>
                         {% else %}

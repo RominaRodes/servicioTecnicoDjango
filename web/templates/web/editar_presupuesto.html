@@ -7,56 +7,78 @@ Editar Presupuesto
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_presupuesto.css' %}" />
+<link rel="stylesheet" type="text/css" href="{% static 'web/styles/crear_orden.css' %}" />
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block main %}
-<div class="container mt-5">
-  <h1 class="py-3">Presupuesto para orden nro.{{ orden.id }}</h1>
-  <h5>Cliente: <a href="{% url 'detalle_cliente' orden.cliente.id %}">
-      {% if orden.cliente.empresa %}
-      {{ orden.cliente.razon_social }}<br>
-      {% else %}
-      {{ orden.cliente.nombre }} {{ orden.cliente.apellido }}
-      {% endif %}
-    </a></h5>
-  <h5>Maquina: {{ orden.maquina }}</h5>
+<div class="container w-75 mt-3">
+  <h1 class="text-center py-3">Editar Presupuesto nro. {{ presupuesto.id }}</h1>
 
-  <form method="post">
+  <!-- Mostrar errores generales -->
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <form method="post" id="presupuesto-form">
     {% csrf_token %}
+
+    <!-- Descripción y Nota Interna -->
     <div class="row">
-      <div class="col-md-12">
-        {% for field in form %}
+      <div class="col-md-6">
         <div class="form-floating mb-3">
-          {{ field|add_class:"form-control" }}
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field.errors }}
+          {{ form.descripcion|add_class:"form-control" }}
+          <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+          {% if form.descripcion.errors %}
+          <div class="text-danger">{{ form.descripcion.errors }}</div>
+          {% endif %}
         </div>
-        {% endfor %}
+      </div>
+      <div class="col-md-6">
+        <div class="form-floating mb-3">
+          {{ form.nota_interna|add_class:"form-control" }}
+          <label for="{{ form.nota_interna.id_for_label }}">Nota Interna</label>
+          {% if form.nota_interna.errors %}
+          <div class="text-danger">{{ form.nota_interna.errors }}</div>
+          {% endif %}
+        </div>
       </div>
     </div>
 
-    <div class="row mt-4">
-      <div class="col-md-8">
+    <!-- Selección de repuestos -->
+    <div class="row" id="repuestos">
+      <div class="col-md-7">
         <div class="form-floating mb-3">
-          {{ form.repuestos|add_class:"form-control repuestos-select" }}
-          <label for="{{ form.repuestos.id_for_label }}">Repuesto</label>
+          <select class="repuestos-select form-control" style="width: 100%;" data-placeholder="Seleccione un repuesto">
+            <option value="">------</option>
+            {% for repuesto in repuestos %}
+            <option value="{{ repuesto.id }}" data-precio="{{ repuesto.precio }}"
+              data-stock="{{ repuesto.cantidad_actual }}">
+              {{ repuesto.nombre }} - {{ repuesto.codigo }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
+        <div id="error-repuesto" class="text-danger mt-1" style="display: none;"></div>
       </div>
 
-      <div class="col-md-2">
+      <div class="col-md-3">
         <div class="form-floating">
-          {{ form.cantidad|add_class:"form-control" }}
-          <label for="{{ form.cantidad.id_for_label }}">Cantidad</label>
+          <input type="number" class="form-control" min="1" placeholder="Cantidad" id="cantidad-input">
+          <label for="cantidad-input">Cantidad</label>
         </div>
+        <div id="error-cantidad" class="text-danger mt-1" style="display: none;"></div>
       </div>
+
       <div class="col-md-2">
-        <button type="button" class="btn btn-sm btn-primary mt-2" id="add-repuesto">Agregar Repuesto</button>
+        <button type="button" class="btn btn-primary w-100 p-3" id="add-repuesto">Agregar</button>
       </div>
     </div>
 
-    <table class="table mt-4" id="repuestos-table" style="display: none;">
+    <!-- Tabla de repuestos añadidos -->
+    <table class="table mt-4" id="repuestos-table">
       <thead>
         <tr>
           <th>Código</th>
@@ -68,114 +90,112 @@ Editar Presupuesto
         </tr>
       </thead>
       <tbody id="repuestos-list">
-        <!-- Los repuestos existentes se mostrarán aquí -->
         {% for repuesto in repuestos_presupuestos %}
         <tr data-id="{{ repuesto.repuesto.id }}">
-          <td>{{ repuesto.repuesto.id }}</td>
+          <td>{{ repuesto.repuesto.codigo }}</td>
           <td>{{ repuesto.repuesto.nombre }}</td>
           <td>{{ repuesto.repuesto.precio }}</td>
-          <td><input type="number" class="form-control cantidad" value="{{ repuesto.cantidad }}" min="1"></td>
-        
-          <td><button type="button" class="btn btn-danger btn-sm remove-repuesto">✖</button></td>
+          <td>{{ repuesto.cantidad }}</td>
+          <td>{{ repuesto.subtotal }}</td>
+          <td>
+            <button type="button" class="btn btn-sm btn-danger remove-repuesto">Eliminar</button>
+          </td>
         </tr>
+        <input type="hidden" name="repuesto_id" value="{{ repuesto.repuesto.id }}"
+          data-row-id="{{ repuesto.repuesto.id }}">
+        <input type="hidden" name="cantidad" value="{{ repuesto.cantidad }}" data-row-id="{{ repuesto.repuesto.id }}">
         {% endfor %}
       </tbody>
       <tfoot>
         <tr>
           <td colspan="4" class="text-end"><strong>Total:</strong></td>
-          <td id="total-cost" class="fw-bold">{{ total_cost }}</td>
+          <td id="total-estimado" class="text-end">{{ total_repuestos }}</td>
           <td></td>
         </tr>
       </tfoot>
     </table>
 
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <div class="form-floating">
-          {{ form.total_estimado|add_class:"form-control" }}
-          <label for="{{ form.total_estimado.id_for_label }}">Total del Presupuesto</label>
-        </div>
-        {{ form.total_estimado.errors }}
+    <!-- Total Estimado -->
+    <div class="col-md-6">
+      <div class="form-floating mb-3">
+        {{ form.total_estimado|add_class:"form-control" }}
+        <label for="{{ form.total_estimado.id_for_label }}">Total Estimado del Presupuesto</label>
+        {% if form.total_estimado.errors %}
+        <div class="text-danger">{{ form.total_estimado.errors }}</div>
+        {% endif %}
       </div>
     </div>
 
-    <button type="submit" class="btn btn-success">GUARDAR</button>
-    <a href="{% url 'detalle_presupuesto' object.pk %}" class="btn btn-formulario">Cancelar</a>
+    <!-- Botón de guardar -->
+    <div class="mt-4">
+      <button type="submit" class="btn btn-formulario">Guardar Presupuesto</button>
+    </div>
   </form>
 </div>
+{% endblock %}
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
 <script>
   $(document).ready(function () {
-    $('#id_repuestos').select2().next().addClass('repuestos-select-container');
-  });
+    $('#repuestos .repuestos-select').select2({
+      placeholder: 'Seleccione un repuesto...',
+      allowClear: true,
+      width: '100%'
+    });
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const repuestosSelect = document.getElementById("id_repuestos");
-    const cantidadInput = document.getElementById("id_cantidad");
-    const addRepuestoButton = document.getElementById("add-repuesto");
-    const repuestosTable = document.getElementById("repuestos-table");
-    const repuestosListBody = document.getElementById("repuestos-list");
-    const totalCostDisplay = document.getElementById("total-cost");
-
-    let repuestosList = [];
-
-    // Función para actualizar el total
     function updateTotal() {
       let total = 0;
-      const rows = repuestosListBody.querySelectorAll("tr");
-      rows.forEach(row => {
-        const cantidad = row.querySelector(".cantidad").value;
-        const precio = parseFloat(row.querySelector("td:nth-child(3)").textContent);
-        const subtotal = cantidad * precio;
-        row.querySelector(".subtotal").textContent = subtotal.toFixed(2);
-        total += subtotal;
+      $('#repuestos-list tr').each(function () {
+        total += parseFloat($(this).find('td').eq(4).text());
       });
-
-      totalCostDisplay.textContent = total.toFixed(2);
+      $('#total-estimado').text(total.toFixed(2));
     }
 
-    // Agregar repuestos desde el formulario
-    addRepuestoButton.addEventListener("click", function () {
-      const repuestoId = repuestosSelect.value;
-      const repuestoName = repuestosSelect.options[repuestosSelect.selectedIndex].text;
-      const cantidad = parseInt(cantidadInput.value);
+    // Lógica para agregar repuesto
+    $('#add-repuesto').on('click', function () {
+      const repuestoId = $('.repuestos-select').val();
+      const repuestoText = $('.repuestos-select option:selected').text();
+      const repuestoPrecio = parseFloat($('.repuestos-select option:selected').data('precio'));
+      const cantidad = parseInt($('#cantidad-input').val());
+      const stockDisponible = parseInt($('.repuestos-select option:selected').data('stock'));
 
-      if (!repuestoId || !cantidad) {
-        alert("Por favor, seleccione un repuesto y especifique una cantidad.");
+      if (!repuestoId || isNaN(cantidad) || cantidad <= 0 || cantidad > stockDisponible) {
+        alert(`Datos inválidos o stock insuficiente. Stock Disponible: ${stockDisponible}`);
         return;
       }
 
-      const precio = parseFloat((Math.random() * 100).toFixed(2));  // Aquí podrías cambiar el precio según el repuesto seleccionado
-      const subtotal = precio * cantidad;
+      const subtotal = repuestoPrecio * cantidad;
+      $('#repuestos-list').append(`
+        <tr data-id="${repuestoId}">
+          <td>${repuestoText.split(' - ')[1]}</td>
+          <td>${repuestoText.split(' - ')[0]}</td>
+          <td>${repuestoPrecio.toFixed(2)}</td>
+          <td>${cantidad}</td>
+          <td>${subtotal.toFixed(2)}</td>
+          <td><button type="button" class="btn btn-sm btn-danger remove-repuesto">Eliminar</button></td>
+        </tr>
+      `);
 
-      // Crear una fila para el nuevo repuesto
-      const row = document.createElement("tr");
-      row.setAttribute("data-id", repuestoId);
-      row.innerHTML = `
-        <td>${repuestoId}</td>
-        <td>${repuestoName}</td>
-        <td>${precio.toFixed(2)}</td>
-        <td><input type="number" class="form-control cantidad" value="${cantidad}" min="1"></td>
-        <td class="subtotal">${subtotal.toFixed(2)}</td>
-        <td><button type="button" class="btn btn-danger btn-sm remove-repuesto">✖</button></td>
-      `;
-      repuestosListBody.appendChild(row);
-      repuestosTable.style.display = "table";
+      $('#presupuesto-form').append(`
+        <input type="hidden" name="repuesto_id" value="${repuestoId}" data-row-id="${repuestoId}">
+        <input type="hidden" name="cantidad" value="${cantidad}" data-row-id="${repuestoId}">
+      `);
+
+      updateTotal();
+      $('.repuestos-select').val(null).trigger('change');
+      $('#cantidad-input').val('');
+    });
+
+    // Lógica para eliminar repuesto
+    $(document).on('click', '.remove-repuesto', function () {
+      const row = $(this).closest('tr');
+      const repuestoId = row.data('id');
+      row.remove();
+      $(`#presupuesto-form input[data-row-id="${repuestoId}"]`).remove();
       updateTotal();
     });
 
-    // Eliminar repuesto
-    repuestosListBody.addEventListener("click", function (event) {
-      if (event.target.classList.contains("remove-repuesto")) {
-        const row = event.target.closest("tr");
-        row.remove();
-        updateTotal();
-      }
-    });
-
-    // Actualizar el total al cargar
     updateTotal();
   });
 </script>

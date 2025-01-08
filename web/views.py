@@ -184,6 +184,7 @@ def get_ordenes_por_estado(request, estado):
                 },
                 'estado': orden.estado,
                 'fecha_ingreso': orden.fecha_ingreso,
+                'notas': orden.notas,
             },
             'accesorios': list(accesorios.values('nombre')),
             'ultimo_estado': ultimo_historial.estado,
@@ -635,7 +636,6 @@ def entregar_orden(request, orden_id):
     orden.save()
     return redirect('listado_ordenes')
 
-
 class EditarPresupuestoView(UpdateView):
     model = Presupuesto
     form_class = PresupuestoForm
@@ -643,34 +643,67 @@ class EditarPresupuestoView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        orden = self.object.orden
-        context['orden'] = orden
-
-        # Cargar los repuestos asociados al presupuesto
         presupuesto = self.object
+
+        # Repuestos asociados al presupuesto con subtotales
         repuestos_presupuestos = RepuestoPresupuesto.objects.filter(presupuesto=presupuesto)
-        
-        # Pasar la lista de repuestos a la plantilla
-        context['repuestos_presupuestos'] = repuestos_presupuestos
-        context['repuestos'] = Repuesto.objects.all()  # Lista de repuestos disponibles
+        repuestos_con_subtotales = [
+            {
+                'repuesto': rp.repuesto,
+                'cantidad': rp.cantidad,
+                'subtotal': rp.cantidad * rp.repuesto.precio
+            } for rp in repuestos_presupuestos
+        ]
 
+        # Repuestos disponibles con stock > 0
+        repuestos_disponibles = Repuesto.objects.filter(cantidad_actual__gt=0)
+
+        context['repuestos_presupuestos'] = repuestos_con_subtotales
+        context['repuestos'] = repuestos_disponibles
         return context
-    
-    def form_valid(self, form):
-        presupuesto = form.save(commit=False)
-        repuestos_ids = self.request.POST.getlist('repuestos')  # Obtener IDs de repuestos seleccionados
 
-        # Recuperar los objetos de repuestos y asignarlos al presupuesto
-        repuestos = Repuesto.objects.filter(id__in=repuestos_ids)
-        
-        # Asignar los repuestos usando `set`, que espera un iterable
-        presupuesto.repuestos.set(repuestos)
-        
-        presupuesto.save()
-        
+    def form_valid(self, form):
+        presupuesto = form.save()
+
+        # Obtener los repuestos y cantidades desde el formulario
+        repuestos_ids = self.request.POST.getlist('repuesto_id')
+        cantidades = self.request.POST.getlist('cantidad')
+
+        # Validar el stock y manejar los repuestos
+        for repuesto_id, cantidad in zip(repuestos_ids, cantidades):
+            repuesto = Repuesto.objects.get(id=repuesto_id)
+            cantidad = int(cantidad)
+            repuesto_presupuesto = RepuestoPresupuesto.objects.filter(
+                presupuesto=presupuesto, repuesto=repuesto).first()
+            cantidad_anterior = repuesto_presupuesto.cantidad if repuesto_presupuesto else 0
+            stock_disponible = repuesto.cantidad_actual + cantidad_anterior
+
+            if cantidad > stock_disponible:
+                messages.error(
+                    self.request,
+                    f"No hay suficiente stock para el repuesto {repuesto.nombre}. Stock disponible: {stock_disponible}."
+                )
+                return self.form_invalid(form)
+
+        # Eliminar los repuestos existentes
+        RepuestoPresupuesto.objects.filter(presupuesto=presupuesto).delete()
+
+        # Guardar los repuestos nuevos
+        for repuesto_id, cantidad in zip(repuestos_ids, cantidades):
+            repuesto = Repuesto.objects.get(id=repuesto_id)
+            RepuestoPresupuesto.objects.create(
+                presupuesto=presupuesto,
+                repuesto=repuesto,
+                cantidad=int(cantidad)
+            )
+
+        messages.success(self.request, 'Presupuesto actualizado con éxito.')
+        return redirect('detalle_presupuesto', pk=presupuesto.pk)
 
     def get_success_url(self):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
+
+
 
 
 class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):
