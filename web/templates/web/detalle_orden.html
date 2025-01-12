@@ -18,9 +18,9 @@ Detalle de la Orden de Reparación
                 <h5>Cliente</h5>
                 {% if object.cliente.empresa %} 
                 <h4 style="font-weight: 600;">{{ object.cliente.razon_social }}</h4>
-                <h4>{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
+                <h4>{{ object.cliente.nombre }}</h4>
                 {% else %}
-                <h4>{{ object.cliente.nombre }} {{ object.cliente.apellido }}</h4>
+                <h4>{{ object.cliente.nombre }}</h4>
                 {% endif %}
             </div>
         
@@ -62,17 +62,21 @@ Detalle de la Orden de Reparación
         </div>
 
         <div>
-            <h5>Accesorios</h5>       
+            <h5>Accesorios</h5>
+            {% if accesorios %}
+            <ul>
+                {% for accesorio in accesorios %}
+                <li>{{ accesorio.nombre }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <h4>No hay accesorios</h4>
+            {% endif %}
         </div>
 
         <div>
             <h5>Garantía</h5>
             <h4>{{ object.maquina.garantia|yesno:"Sí,No" }}</h4>
-        </div>
-
-        <div>  
-            <h5>Falla</h5>
-            <h4>{{object.maquina.falla}}</h4>
         </div>
 
         <div>
@@ -122,10 +126,10 @@ Detalle de la Orden de Reparación
     </div>
     <div class="row3">
          <hr>
-         <h3 class="heading">Presupuesto</h3>
+         
         {% if presupuesto %}
        
-       
+        <h3 class="heading">Presupuesto</h3>
         <div class="presupuesto">
         <table class="table table-hover table-sm p-2" id="tabla-presupuesto">
             <tr>
@@ -153,20 +157,52 @@ Detalle de la Orden de Reparación
                 <td>{{ presupuesto.descripcion }}</td>
             </tr>
             <tr>
+                <th>Repuestos</th>
+                {% if repuestos %}
+                
+                <td>               
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for repuesto in repuestos %}
+                            <tr>
+                                <td>{{ repuesto.repuesto.codigo }}</td>
+                                <td>{{ repuesto.repuesto.nombre }}</td>
+                                <td>{{ repuesto.cantidad }}</td>
+                                <td>{{ repuesto.repuesto.precio }}$</td>
+                                <td>{{ repuesto.costo_total_repuesto }}$</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+                    {% else %}
+                    <td>No hay repuestos asociados</td>
+                    {% endif %}
+            </tr>
+            <tr>
                 <th class="total">Total</th>
-                <td>{{ presupuesto.total }}$</td>
+                <td>{{ presupuesto.total_estimado }}$</td>
             </tr>
 
             </table>
         </div>
         <div class="botones">
-            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">mail Orden</a>
-            <a href="{% url 'mandar_mail_presupuesto' presupuesto.id %}" class="btn btn-formulario">mail Presupuesto</a>
-            <a href="{% url 'editar_presupuesto' presupuesto.id %}" class="btn btn-formulario">Editar</a>    
+            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">Mail Comprobante de entrega</a>
+            <a href="{% url 'mandar_mail_presupuesto' presupuesto.id %}" class="btn btn-formulario">Mail Presupuesto</a>
+            <a href="{% url 'editar_presupuesto' presupuesto.id %}" class="btn btn-formulario">Editar Presupuesto</a>    
         </div>
         {% else %}
         <div class="botones">
-            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">Mail Orden</a>
+            <a href="{% url 'mandar_mail_orden' object.id %}" class="btn btn-formulario">Mail Comprobante de entrega</a>
             <a href="{% url 'presupuestar_orden' object.id %}" class="btn btn-formulario">Presupuestar</a>
         </div>
         {% endif %}

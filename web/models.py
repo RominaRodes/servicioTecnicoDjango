@@ -3,6 +3,8 @@ from django.db import models
 from django.utils import timezone
 import uuid
 from django.core.exceptions import ValidationError
+from django.contrib import messages
+
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=60, verbose_name="Categoría")
@@ -66,27 +68,46 @@ class Proveedor(models.Model):
 
 class Repuesto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True)
-    codigo = models.CharField(max_length=50, default="SIN-CODIGO")
+    codigo = models.CharField(max_length=50)
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)  
     costo_ultima_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Costo último
     costo_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Costo promedio USD
-    cantidad_actual = models.PositiveIntegerField(default=0)  # Control de stock
+    stock = models.PositiveIntegerField(default=0)  
     stock_critico = models.PositiveIntegerField(default=1)
     ubicacion = models.CharField(max_length=100, blank=True, default='---')
+    correo_enviado = models.BooleanField(default=False)
+
+    def registrar_movimiento_inicial(self):
+        """Registra un movimiento inicial al crear un nuevo repuesto."""
+        if self.stock > 0:
+            costo_inicial = self.costo_ultima_compra or self.precio
+            movimiento = MovimientoStockRepuesto.objects.create(
+                repuesto=self,
+                tipo='entrada',
+                cantidad=self.stock,
+                costo_unitario=costo_inicial,
+                destino='Registro inicial'
+            )
+            # Actualizar el costo de última compra y costo promedio
+            self.costo_ultima_compra = costo_inicial
+            self.actualizar_costo_promedio()
+            self.save(update_fields=['costo_ultima_compra', 'costo_usd'])
 
     def descontar_stock(self, cantidad):
         """Descuenta una cantidad del stock actual."""
-        if cantidad <= self.cantidad_actual:
-            self.cantidad_actual -= cantidad
+        if cantidad <= self.stock:
+            self.stock -= cantidad
             self.save()
+            
         else:
             raise ValidationError(f"No hay suficiente stock para el repuesto: {self.nombre}")
 
+
+
     def aumentar_stock(self, cantidad):
         """Aumenta el stock actual en la cantidad especificada."""
-        self.cantidad_actual += cantidad
-        
+        self.stock += cantidad
         self.save()
 
     def calcular_costo_promedio(self):
@@ -96,15 +117,22 @@ class Repuesto(models.Model):
         total_cantidad = sum(mov.cantidad for mov in movimientos)
 
         return total_costo / total_cantidad if total_cantidad > 0 else 0
-
     
     def actualizar_costo_promedio(self):
         """Actualiza el costo promedio en el campo costo_usd."""
         self.costo_usd = self.calcular_costo_promedio()
         self.save()
 
+    def verificar_stock_critico(self):
+        """Verifica si el stock está en o por debajo del nivel crítico."""
+        return self.stock <= self.stock_critico
+        # Señal para registrar automáticamente un movimiento de entrada al crear un repuesto
+            
     def __str__(self):
         return f"{self.nombre} - {self.codigo}"
+    
+
+
 
 class MovimientoStockRepuesto(models.Model):
     TIPO_MOVIMIENTO = [
@@ -118,43 +146,48 @@ class MovimientoStockRepuesto(models.Model):
     costo_promedio = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Costo promedio al momento del movimiento")  
     fecha = models.DateTimeField(auto_now_add=True)
     destino = models.CharField(max_length=100, blank=True, null=True, help_text="Número de Orden o 'Mostrador' para ventas directas")
+    stock_parcial = models.PositiveIntegerField(default=0) 
 
-
-    @property
-    def saldo_parcial(self):
-        movimientos = MovimientoStockRepuesto.objects.filter(repuesto=self.repuesto, fecha__lte=self.fecha).order_by('fecha')
-        saldo = 0
-        for mov in movimientos:
-            if mov.tipo == 'entrada':
-                saldo += mov.cantidad
-            elif mov.tipo == 'salida':
-                saldo -= mov.cantidad
-        return saldo
-    
     def save(self, *args, **kwargs):
-        # Guarda el movimiento primero para asegurar que se registre correctamente
-        super().save(*args, **kwargs)
+        is_new = self.pk is None  # Verificar si es un movimiento nuevo
 
-        # Actualiza el stock y el costo promedio según el tipo de movimiento
-        if self.tipo == 'entrada':
-            self.repuesto.aumentar_stock(self.cantidad)
+        if is_new:
+            # Obtener el último movimiento para calcular el saldo parcial
+            ultimo_movimiento = MovimientoStockRepuesto.objects.filter(
+                repuesto=self.repuesto
+            ).exclude(pk=self.pk).order_by('-fecha', '-id').first()
             
-            # Actualiza el costo de última compra si es una entrada
-            if self.costo_unitario is not None:
-                self.repuesto.costo_ultima_compra = self.costo_unitario
+            saldo_anterior = ultimo_movimiento.stock_parcial if ultimo_movimiento else 0
 
-            # Actualiza el costo promedio del repuesto
-            self.repuesto.actualizar_costo_promedio()
+            # Para el movimiento inicial, asignar directamente el stock actual
+            if self.destino == 'Registro inicial':
+                self.stock_parcial = self.repuesto.stock
+            else:
+                self.stock_parcial = saldo_anterior + (self.cantidad if self.tipo == 'entrada' else -self.cantidad)
 
-        elif self.tipo == 'salida':
-            self.repuesto.descontar_stock(self.cantidad)
-        
-        # Guarda el costo promedio actual en el movimiento
-        self.costo_promedio = self.repuesto.costo_usd
-        super().save(update_fields=['costo_promedio'])  # Solo actualiza el campo costo_promedio
+        super().save(*args, **kwargs)  # Guardar el movimiento
 
-    def __str__(self):
-        return f"{self.tipo.capitalize()} de {self.cantidad} - {self.repuesto.nombre} ({self.fecha})"
+        # Evitar duplicar el ajuste de stock para el movimiento inicial
+        if is_new and self.destino != 'Registro inicial':
+            # Actualizar el stock del repuesto
+            if self.tipo == 'entrada':
+                self.repuesto.aumentar_stock(self.cantidad)
+                if self.costo_unitario:
+                    self.repuesto.costo_ultima_compra = self.costo_unitario
+                self.repuesto.actualizar_costo_promedio()
+            elif self.tipo == 'salida':
+                self.repuesto.descontar_stock(self.cantidad)
+
+        # Calcular el costo promedio del movimiento
+        if self.destino == 'Registro inicial':
+            self.costo_promedio = self.costo_unitario or 0
+        else:
+            self.costo_promedio = self.repuesto.costo_usd or 0
+
+        # Guardar nuevamente para actualizar el campo costo_promedio
+        super().save(update_fields=['costo_promedio'])
+
+
 
 
 class Maquina(models.Model):

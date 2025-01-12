@@ -21,6 +21,7 @@ Listado de Repuestos
                 </button>
             </form>
         </div>
+    <a href="{% url 'crear_repuesto' %}" class="btn btn-formulario my-3">Nuevo Repuesto</a>
       
     </div>
 
@@ -31,10 +32,11 @@ Listado de Repuestos
                 <th>Nombre</th>
                 <th>Código</th>
                 <th>Categoría</th>
-                <th>Cantidad</th>
+                <th>Stock</th>
                 <th>Stock Crítico</th>
-                <th>Precio</th>
-                <th>Costo</th>
+                <th>Precio (USD / unidad)</th>
+                <th>Costo Última Compra (USD)</th>
+                <th>Ubicación</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -45,10 +47,23 @@ Listado de Repuestos
                     <td>{{ repuesto.nombre }}</td>
                     <td>{{ repuesto.codigo }}</td>
                     <td>{{ repuesto.categoria.nombre }}</td>
-                    <td>{{ repuesto.cantidad_actual }}</td>
+                    <td>{{ repuesto.stock }}</td>
                     <td>{{ repuesto.stock_critico }}</td>
                     <td title="Precio en USD">${{ repuesto.precio }}</td>
-                    <td title="Costo promedio en USD basado en compras">${{ repuesto.costo_usd }}</td>
+                    <td title="Costo promedio en USD basado en compras">
+                        {% if repuesto.costo_ultima_compra %}
+                        ${{ repuesto.costo_ultima_compra }}
+                        {% else %}
+                        ----
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if repuesto.ubicacion %}
+                        {{ repuesto.ubicacion }}
+                        {% else %}
+                        ----
+                        {% endif %}
+                    </td>
                     <td class="d-flex gap-2">
                         <a href="{% url 'editar_repuesto' repuesto.id %}" class="btn btn-primary btn-sm">Editar</a>
                         <a href="{% url 'movimientos_repuesto' repuesto.id %}" class="btn btn-formulario btn-sm">Movimientos</a>

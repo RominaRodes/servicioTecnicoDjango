@@ -112,7 +112,7 @@ Detalle Presupuesto
 
     <div class="row1">
         <div class="estado">
-            <h5>La orden  {{ object.id }} está</h5>  
+            <h5>La orden  {{ orden.id }} está</h5>  
             <h2>{{ ultimo_historial_estado.estado|capfirst }}</h2>
             <h5>al {{ ultimo_historial_estado.fecha_cambio|date:"d/m/Y" }}</h5>
             <hr>
@@ -161,8 +161,10 @@ Detalle Presupuesto
         </tr>
         {% endif %}
 
-        {% if repuestos %}
+        
         <tr>
+            <th>Repuestos</th>
+            {% if repuestos %}
             <td colspan="2">
                 <table class="table table-bordered text-center">
                     <!-- Título "Repuestos" en el head -->
@@ -200,8 +202,7 @@ Detalle Presupuesto
             </td>
         </tr>
         {% else %}
-        <tr>
-            <td colspan="2" class="text-center">No hay repuestos asociados a este presupuesto.</td>
+            <td colspan="2">No hay repuestos asociados.</td>
         </tr>
         {% endif %}
 

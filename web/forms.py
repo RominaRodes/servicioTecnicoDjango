@@ -157,33 +157,90 @@ class PresupuestoForm(forms.ModelForm):
             for idx, repuesto_id in enumerate(repuestos_ids):
                 if not repuesto_id:
                     raise forms.ValidationError(f"El repuesto en la fila {idx + 1} no es válido.")
+                
                 try:
                     repuesto = Repuesto.objects.get(id=repuesto_id)
                 except Repuesto.DoesNotExist:
                     raise forms.ValidationError(f"El repuesto con ID {repuesto_id} no existe.")
-
+                
                 try:
                     cantidad = int(cantidades[idx])
                     if cantidad <= 0:
                         raise forms.ValidationError(f"La cantidad para el repuesto {repuesto.nombre} debe ser mayor a 0.")
+                    if cantidad > repuesto.stock:
+                        raise forms.ValidationError(f"La cantidad para el repuesto {repuesto.nombre} ({cantidad}) excede el stock disponible ({repuesto.stock}).")
                 except ValueError:
                     raise forms.ValidationError(f"La cantidad en la fila {idx + 1} debe ser un número entero válido.")
+
         return cleaned_data
+
+
 
 
 class CrearRepuestoForm(forms.ModelForm):
     class Meta:
         model = Repuesto
-        fields = ['nombre', 'categoria', 'codigo', 'precio', 'cantidad_actual', 'stock_critico', 'ubicacion']
+        fields = ['nombre', 'categoria', 'codigo', 'precio', 'costo_ultima_compra',  'stock','stock_critico', 'ubicacion']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
             'codigo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código'}),
             'precio': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Precio en USD'}),
-            'cantidad_actual': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Cantidad Inicial'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Cantidad Inicial'}),
+            'costo_ultima_compra': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Costo Unitario Inicial'}),
             'stock_critico': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Stock Crítico'}),
             'ubicacion': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}),
         }
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre')
+        if not nombre:
+            raise forms.ValidationError("El campo 'Nombre' es obligatorio.")
+        if Repuesto.objects.filter(nombre=nombre).exists():
+            raise forms.ValidationError("El nombre ya está registrado.")
+        return nombre
+
+    def clean_codigo(self):
+        codigo = self.cleaned_data.get('codigo')
+        if not codigo:
+            raise forms.ValidationError("El campo 'Código' es obligatorio.")
+        if Repuesto.objects.filter(codigo=codigo).exists():
+            raise forms.ValidationError("El código ya está registrado.")
+        return codigo
+
+    def clean_precio(self):
+        precio = self.cleaned_data.get('precio')
+        if not precio or precio <= 0:
+            raise forms.ValidationError("El campo 'Precio' es obligatorio y debe ser un número positivo.")
+        return precio
+
+    def clean_costo_ultima_compra(self):
+        costo_ultima_compra = self.cleaned_data.get('costo_ultima_compra')
+
+        if costo_ultima_compra is not None:
+            if costo_ultima_compra <= 0:
+                raise forms.ValidationError("El costo unitario debe ser un número positivo.")
+        return costo_ultima_compra
+    def clean_stock(self):
+            stock = self.cleaned_data.get('stock')
+            if stock is None or stock < 0:
+                raise forms.ValidationError("El campo 'Cantidad Inicial' es obligatorio y debe ser 0 o un número positivo.")
+            return stock
+    
+
+    def clean_stock_critico(self):
+        stock_critico = self.cleaned_data.get('stock_critico')
+        if stock_critico is None or stock_critico < 0:
+            raise forms.ValidationError("El campo 'Stock Crítico' es obligatorio y debe ser 0 o un número positivo.")
+        return stock_critico
+
+    def clean_ubicacion(self):
+        ubicacion = self.cleaned_data.get('ubicacion')
+        if not ubicacion:
+            raise forms.ValidationError("El campo 'Ubicación' es obligatorio.")
+        return ubicacion
+    
+    
 
 class EditarRepuestoForm(forms.ModelForm):
     class Meta:

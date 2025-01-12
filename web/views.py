@@ -6,6 +6,7 @@ from .forms import ClienteForm, DetalleClienteForm, OrdenDeReparacionForm,  Pres
 from .models import Cliente, OrdenDeReparacion, Maquina, Presupuesto, HistorialEstado, SubCategoria, Modelo, Categoria, Accesorio, Repuesto, RepuestoPresupuesto, MovimientoStockRepuesto
 import math 
 from django.views.generic import TemplateView, ListView
+from django.views.generic import DetailView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -95,6 +96,7 @@ def index(request):
             'presupuesto_id': presupuesto_id
         }
         ordenes_info.append(orden_info)
+
 
     paginator = Paginator(ordenes_info, 15)
     page_number = request.GET.get('page')
@@ -285,7 +287,6 @@ def crear_cliente(request):
     
     return render(request, 'web/crear_cliente.html', {'form': form, 'half': half})
 
-
 class ClienteDetailView(LoginRequiredMixin, DetailView):
     model = Cliente
     template_name = 'web/detalle_cliente.html'
@@ -397,16 +398,19 @@ def lista_repuestos(request):
 
 @staff_member_required
 def crear_repuesto(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         form = CrearRepuestoForm(request.POST)
         if form.is_valid():
             repuesto = form.save()
-            messages.success(request, f"El repuesto '{repuesto.nombre}' fue creado con éxito.")
-            return redirect('movimientos_repuesto', pk=repuesto.id)  
+            repuesto.registrar_movimiento_inicial()  # Registrar el movimiento inicial
+            messages.success(request, 'Repuesto creado con éxito.')
+            return redirect('repuestos') 
+
     else:
         form = CrearRepuestoForm()
-    
+
     return render(request, 'web/crear_repuesto.html', {'form': form})
+    
 
 @staff_member_required
 def editar_repuesto(request, pk):
@@ -425,39 +429,42 @@ def editar_repuesto(request, pk):
 @staff_member_required
 def ajustar_stock(request, pk):
     repuesto = get_object_or_404(Repuesto, pk=pk)
+    
     if request.method == "POST":
         try:
             nueva_cantidad = int(request.POST.get('nueva_cantidad'))
             if nueva_cantidad < 0:
                 raise ValueError("La cantidad no puede ser negativa.")
         except (ValueError, TypeError):
-            messages.error(request, "Ingrese una cantidad válida (un número entero no negativo).")
+            messages.error(request, "Ingrese una cantidad válida. Debe ser un número entero no negativo.")
             return render(request, 'web/ajustar_stock.html', {'repuesto': repuesto})
 
-        diferencia = nueva_cantidad - repuesto.cantidad_actual
+        diferencia = nueva_cantidad - repuesto.stock
+
+        if diferencia == 0:
+            messages.info(request, "No hubo cambios en el stock.")
+            return redirect('movimientos_repuesto', pk=repuesto.id)
+
         tipo_movimiento = 'entrada' if diferencia > 0 else 'salida'
 
-        if diferencia != 0:
-            MovimientoStockRepuesto.objects.create(
-                repuesto=repuesto,
-                tipo=tipo_movimiento,
-                cantidad=abs(diferencia),
-                destino='Ajuste manual'
-            )
-            repuesto.cantidad_actual = nueva_cantidad
-            repuesto.save()
+        # Registrar el movimiento
+        MovimientoStockRepuesto.objects.create(
+            repuesto=repuesto,
+            tipo=tipo_movimiento,
+            cantidad=abs(diferencia),
+            destino='Ajuste manual',
+            costo_unitario=repuesto.costo_ultima_compra if tipo_movimiento == 'entrada' else None
+        )
 
-            if tipo_movimiento == 'entrada':
-                messages.success(request, f"Se añadieron {abs(diferencia)} unidades. Stock actualizado a {nueva_cantidad}.")
-            else:
-                messages.success(request, f"Se retiraron {abs(diferencia)} unidades. Stock actualizado a {nueva_cantidad}.")
+        # Mensajes según el estado del stock
+        if repuesto.verificar_stock_critico():
+            messages.warning(request, f"El stock de {repuesto.nombre} está en nivel crítico ({repuesto.stock} unidades).")
         else:
-            messages.info(request, "No hubo cambios en el stock.")
+            messages.success(request, f"Stock actualizado a {nueva_cantidad}.")
 
         return redirect('movimientos_repuesto', pk=repuesto.id)
 
     return render(request, 'web/ajustar_stock.html', {'repuesto': repuesto})
-
 
 @staff_member_required
 def registrar_compra(request, pk):
@@ -465,19 +472,23 @@ def registrar_compra(request, pk):
     if request.method == "POST":
         cantidad = int(request.POST.get('cantidad'))
         costo_unitario = float(request.POST.get('costo_unitario'))
-        
-        MovimientoStockRepuesto.objects.create(
+
+        movimiento = MovimientoStockRepuesto.objects.create(
             repuesto=repuesto,
             tipo='entrada',
             cantidad=cantidad,
             costo_unitario=costo_unitario,
             destino='Compra'
         )
+        movimiento.save()
+        # Depuración
+        print(f"Stock después de registrar la compra: {repuesto.stock}")
+        print(f"Costo promedio actualizado: {repuesto.costo_usd}")
+
         messages.success(request, f"Compra registrada: {cantidad} unidades de '{repuesto.nombre}' a {costo_unitario} cada una.")
         return redirect('movimientos_repuesto', pk=repuesto.id)
     
     return render(request, 'web/registrar_compra.html', {'repuesto': repuesto})
-
 
 
 class BuscarRepuestoView(LoginRequiredMixin, ListView):
@@ -511,7 +522,6 @@ class BuscarRepuestoView(LoginRequiredMixin, ListView):
         return context
 
 
-
 @staff_member_required
 def movimientos_repuesto(request, pk):
     repuesto = get_object_or_404(Repuesto, pk=pk)
@@ -521,9 +531,19 @@ def movimientos_repuesto(request, pk):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    if movimientos.exists():
+        ultimo_movimiento = movimientos.order_by('fecha', 'id').last()
+
+        if ultimo_movimiento.stock_parcial != repuesto.stock:
+            messages.warning(
+                request,
+                f"Inconsistencia detectada: El stock actual ({repuesto.stock}) no coincide con el stock parcial del último movimiento ({ultimo_movimiento.stock_parcial})."
+            )
+
     return render(request, 'web/movimientos_repuesto.html', {
         'repuesto': repuesto,
         'page_obj': page_obj,
+        'movimientos': movimientos,
     })
 
 @staff_member_required
@@ -551,7 +571,7 @@ def presupuestar_orden(request, orden_id):
                 cantidad = int(cantidad)
                 
                 # Validar stock suficiente
-                if repuesto.cantidad_actual < cantidad:
+                if repuesto.stock < cantidad:
                     messages.error(request, f"No hay suficiente stock para el repuesto {repuesto.nombre}.")
                     presupuesto.delete() 
                     return redirect('presupuestar_orden', orden_id=orden.id)
@@ -573,24 +593,43 @@ def presupuestar_orden(request, orden_id):
         form = PresupuestoForm()
     
     # Filtrar solo repuestos con stock disponible
-    repuestos = Repuesto.objects.filter(cantidad_actual__gt=0)
+    repuestos = Repuesto.objects.filter(stock__gt=0)
     return render(request, 'web/crear_presupuesto.html', {
         'form': form,
         'orden': orden,
         'repuestos': repuestos
     })
 
-
 @login_required
 def aceptar_presupuesto_por_mail(request, uuid):
     presupuesto = get_object_or_404(Presupuesto, uuid=uuid)
     if timezone.now() > presupuesto.fecha_creacion + timedelta(days=30):
         return HttpResponseBadRequest("El enlace ha caducado.")
-    presupuesto.aprobar()
+    
+    presupuesto.aprobar()  # Aprobar el presupuesto y generar movimientos
+
+    # Verificar si algún repuesto está en nivel crítico
+    repuestos_criticos = []
+    for repuesto_presupuesto in presupuesto.repuestopresupuesto_set.all():
+        repuesto = repuesto_presupuesto.repuesto
+        if repuesto.verificar_stock_critico():  # Llama al método que verifica el stock crítico
+            repuestos_criticos.append(repuesto.nombre)
+    
+    # Mostrar mensaje si hay repuestos críticos
+    if repuestos_criticos:
+        repuestos_list = ", ".join(repuestos_criticos)
+        messages.warning(
+            request,
+            f"Los siguientes repuestos alcanzaron el nivel crítico de stock: {repuestos_list}."
+        )
+
+    # Actualizar estado de la orden
     presupuesto.orden.estado = 'aceptada'
     presupuesto.orden.save()
-    messages.success(request, 'El presupuesto fue aceptado con éxito')
+
+    messages.success(request, 'El presupuesto fue aceptado con éxito.')
     return redirect('listado_ordenes')
+
 
 @login_required
 def rechazar_presupuesto_por_mail(request, uuid):
@@ -656,7 +695,7 @@ class EditarPresupuestoView(UpdateView):
         ]
 
         # Repuestos disponibles con stock > 0
-        repuestos_disponibles = Repuesto.objects.filter(cantidad_actual__gt=0)
+        repuestos_disponibles = Repuesto.objects.filter(stock__gt=0)
 
         context['repuestos_presupuestos'] = repuestos_con_subtotales
         context['repuestos'] = repuestos_disponibles
@@ -676,7 +715,7 @@ class EditarPresupuestoView(UpdateView):
             repuesto_presupuesto = RepuestoPresupuesto.objects.filter(
                 presupuesto=presupuesto, repuesto=repuesto).first()
             cantidad_anterior = repuesto_presupuesto.cantidad if repuesto_presupuesto else 0
-            stock_disponible = repuesto.cantidad_actual + cantidad_anterior
+            stock_disponible = repuesto.stock + cantidad_anterior
 
             if cantidad > stock_disponible:
                 messages.error(
@@ -704,8 +743,6 @@ class EditarPresupuestoView(UpdateView):
         return reverse_lazy('detalle_presupuesto', kwargs={'pk': self.object.pk})
 
 
-
-
 class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):
     model = OrdenDeReparacion
     template_name = 'web/detalle_orden.html'
@@ -717,10 +754,13 @@ class OrdenDeReparacionDetailView(LoginRequiredMixin, DetailView):
         context['estados'] = ["ingresada", "presupuestada", "aceptada", "rechazada", "reparada", "entregada"]
         presupuesto = Presupuesto.objects.filter(orden=self.object).first()
         context['presupuesto'] = presupuesto
+        context['accesorios'] = self.object.maquina.accesorios.all()
         if presupuesto:
             context['presupuesto'] = presupuesto
+            context['repuestos'] = RepuestoPresupuesto.objects.filter(presupuesto=presupuesto)
         else:
             context['presupuesto'] = None
+            context['repuestos'] = None
         return context
 
 
@@ -803,9 +843,18 @@ def mandar_mail(request,id_presupuesto):
         'equipo_accesorio3': accesorios_list[2] if len(accesorios_list) > 2 else '',
         'equipo_accesorio4': accesorios_list[3] if len(accesorios_list) > 3 else ''
     }
+    repuestos = RepuestoPresupuesto.objects.filter(presupuesto=presupuesto)
+    repuestos_data = [{
+        'codigo': repuesto.repuesto.codigo,
+        'nombre': repuesto.repuesto.nombre,
+        'cantidad': repuesto.cantidad,
+        'precio_unitario': repuesto.repuesto.precio,
+        'subtotal': repuesto.cantidad * repuesto.repuesto.precio,
+    } for repuesto in repuestos]
+
 
     datos = {
-        'cliente_nombre': f'{orden.cliente.nombre} {orden.cliente.apellido}',
+        'cliente_nombre': f'{orden.cliente.nombre}',
         'cliente_telefono': orden.cliente.telefono,
         'cliente_email': orden.cliente.email,
         'presupuesto_numero': presupuesto.id,
@@ -816,27 +865,27 @@ def mandar_mail(request,id_presupuesto):
         'equipo_modelo': orden.maquina.modelo,
         'equipo_numero_serie': orden.maquina.serie,
         'equipo_garantia': 'Posee' if orden.maquina.garantia else 'No posee',
-        'equipo_falla': orden.maquina.falla,
         'equipo_notas': orden.notas,
         'equipo_insumos': 'Ninguno',  # Agregar este dato para que se incluya
         'presupuesto_descripcion': presupuesto.descripcion,
-        'presupuesto_total': presupuesto.total,
-        **accesorios_dict
+        'presupuesto_total': presupuesto.total_estimado,
+        **accesorios_dict,
+        'repuestos': repuestos_data,
     }
 
     # Generar el PDF en memoria
     pdf_buffer = BytesIO()
     generar_template_presupuesto(pdf_buffer, datos)
-    pdf_buffer.seek(0)  # Volver al principio del archivo para poder leerlo
+    pdf_buffer.seek(0)  
 
     try:
         uuid = presupuesto.uuid
         aceptar_url = request.build_absolute_uri(reverse('aceptar_presupuesto_por_mail', kwargs={'uuid': uuid}))
         rechazar_url = request.build_absolute_uri(reverse('rechazar_presupuesto_por_mail', kwargs={'uuid': uuid}))
         if orden.cliente.empresa:
-            cliente =  f'{orden.cliente.nombre} {orden.cliente.apellido}-{orden.cliente.razon_social}'
+            cliente =  f'{orden.cliente.nombre}-{orden.cliente.razon_social}'
         else:
-            cliente = f'{orden.cliente.nombre} {orden.cliente.apellido}'
+            cliente = f'{orden.cliente.nombre}'
         
         subject= 'Presupuesto - Orden de Reparacion'
         to_mail = orden.cliente.email
@@ -864,7 +913,7 @@ def mandar_mail(request,id_presupuesto):
         if orden.cliente.empresa:
             nombre_pdf = f'{orden.cliente.razon_social.upper()}_presupuesto.pdf'
         else:
-            nombre_pdf = f'{orden.cliente.nombre.upper()}_{orden.cliente.apellido.upper()}_presupuesto.pdf'
+            nombre_pdf = f'{orden.cliente.nombre.upper()}_presupuesto.pdf'
 
         message.attach(nombre_pdf, pdf_buffer.getvalue(), 'application/pdf')
 
@@ -884,8 +933,9 @@ def mandar_mail(request,id_presupuesto):
             message.attach(imagen)
 
         message.send()
-        data = {"message": "Correo enviado correctamente"}
-        return Response(data, status=status.HTTP_200_OK)
+        messages.success(request, f'El presupuesto de la orden nro. {orden.id} fue enviado con éxito')
+        return redirect('index')  
+
     except Exception as e:
         logger.error(f'Error al enviar correo electrónico: {str(e)}')
         return Response({"message": f'Error al enviar correo electrónico: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
@@ -904,7 +954,7 @@ def mandar_mail_comprobante_entrega(request,id_orden):
     }
 
     datos = {
-        'cliente_nombre': f'{orden.cliente.nombre} {orden.cliente.apellido}',
+        'cliente_nombre': f'{orden.cliente.nombre}',
         'cliente_telefono': orden.cliente.telefono,
         'cliente_email': orden.cliente.email,
         'orden_numero': orden.id,
@@ -914,7 +964,6 @@ def mandar_mail_comprobante_entrega(request,id_orden):
         'equipo_modelo': orden.maquina.modelo,
         'equipo_numero_serie': orden.maquina.serie,
         'equipo_garantia': 'Posee' if orden.maquina.garantia else 'No posee',
-        'equipo_falla': orden.maquina.falla,
         'equipo_notas': orden.notas,
         'equipo_insumos': 'Ninguno',  # Agregar este dato para que se incluya
         **accesorios_dict
@@ -927,9 +976,9 @@ def mandar_mail_comprobante_entrega(request,id_orden):
 
     try:
         if orden.cliente.empresa:
-            cliente =  f'{orden.cliente.nombre} {orden.cliente.apellido}-{orden.cliente.razon_social}'
+            cliente =  f'{orden.cliente.nombre}-{orden.cliente.razon_social}'
         else:
-            cliente = f'{orden.cliente.nombre} {orden.cliente.apellido}'
+            cliente = f'{orden.cliente.nombre}'
         
         subject= 'Comprobante de entrega - Orden de Reparacion'
         to_mail = orden.cliente.email
@@ -955,7 +1004,7 @@ def mandar_mail_comprobante_entrega(request,id_orden):
         if orden.cliente.empresa:
             nombre_pdf = f'{orden.cliente.razon_social.upper()}_ordenReparacion.pdf'
         else:
-            nombre_pdf = f'{orden.cliente.nombre.upper()}_{orden.cliente.apellido.upper()}_ordenReparacion.pdf'
+            nombre_pdf = f'{orden.cliente.nombre.upper()}_ordenReparacion.pdf'
 
         message.attach(nombre_pdf, pdf_buffer.getvalue(), 'application/pdf')
 

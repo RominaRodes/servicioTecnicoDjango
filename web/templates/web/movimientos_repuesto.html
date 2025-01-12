@@ -12,7 +12,7 @@ Movimientos de Stock - {{ repuesto.nombre }}
 {% block main %}
 <div class="container-fluid px-4 px-lg-5 mt-5">
     <h1 class="py-2">Movimientos de Stock - {{ repuesto.nombre }}</h1>
-    <div class="d-flex justify-content-between">
+    <div class="d-fle++x justify-content-between">
         <div class="acciones my-3">
             <a href="{% url 'editar_repuesto' repuesto.id %}" class="btn btn-primary btn-sm">Editar Repuesto</a>
             <a href="{% url 'registrar_compra' repuesto.id %}" class="btn btn-formulario btn-sm">Registrar Compra</a>
@@ -20,6 +20,7 @@ Movimientos de Stock - {{ repuesto.nombre }}
         </div>
         <div class="costo_promedio my-3">
             <a href="#" class="btn btn-secondary btn-sm">Precio: {{ repuesto.precio }}</a>
+                <a href="#" class="btn btn-info btn-sm">Costo Última Compra: {{ repuesto.costo_ultima_compra|default:"---" }}</a>
         </div>
     </div>
 
@@ -30,7 +31,7 @@ Movimientos de Stock - {{ repuesto.nombre }}
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th>Destino</th>
-                <th>Stock Parcial</th>
+                <th>Stock</th>
                 <th>Stock Crítico</th>
                 <th>Costo x Unidad</th>
                 <th>Costo Promedio</th>
@@ -43,7 +44,7 @@ Movimientos de Stock - {{ repuesto.nombre }}
                 <td>{{ movimiento.tipo }}</td>
                 <td class="{% if movimiento.tipo == 'salida' %}text-danger{% endif %}">{{ movimiento.cantidad }}</td>
                 <td>{{ movimiento.destino|default:"No especificado" }}</td>
-                <td>{{ movimiento.saldo_parcial }}</td>
+                <td>{{ movimiento.stock_parcial }}</td>
                 <td>{{ repuesto.stock_critico }}</td>
                 <td>{% if movimiento.costo_unitario %}{{ movimiento.costo_unitario }}{% else %}---{% endif %}</td>
                 <td>{{ movimiento.costo_promedio|default:"---" }}</td>
